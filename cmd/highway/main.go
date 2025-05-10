@@ -25,7 +25,6 @@ func main() {
 		if line == "" {
 			continue
 		}
-		args := strings.Fields(line)
 		cmd := exec.Command("/bin/sh", "-c", line)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
