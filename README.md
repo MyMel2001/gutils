@@ -82,7 +82,6 @@ A collection of basic Unix-like utilities written in Go, inspired by BusyBox and
 - id
 - kill
 - killall
-- ln (see shortcut)
 - ls
 - lsblk
 - mkdir
