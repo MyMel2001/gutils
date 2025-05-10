@@ -2,7 +2,7 @@
 
 _Pronounced like "goo-tills"_
 
-A collection of basic Unix-like utilities written in Go, inspired by BusyBox. Each utility is a separate binary for simplicity and modularity.
+A collection of basic Unix-like utilities written in Go, inspired by BusyBox and GNU CoreUtils. Each utility is a separate binary for simplicity and modularity.
 
 ## Utilities Included
 - highway (minimal shell)
