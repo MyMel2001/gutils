@@ -20,9 +20,31 @@ func main() {
 		}
 		line = strings.TrimSpace(line)
 		if line == "exit" || line == "quit" {
-			break
+			os.Exit(0)
+		}
+		if line == "pwd" {
+			dir, err := os.Getwd()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "pwd:", err)
+			} else {
+				fmt.Println(dir)
+			}
+			continue
 		}
 		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "cd ") || line == "cd" {
+			args := strings.Fields(line)
+			dir := ""
+			if len(args) < 2 {
+				dir = os.Getenv("HOME")
+			} else {
+				dir = args[1]
+			}
+			if err := os.Chdir(dir); err != nil {
+				fmt.Fprintln(os.Stderr, "cd:", err)
+			}
 			continue
 		}
 		cmd := exec.Command("/bin/sh", "-c", line)
