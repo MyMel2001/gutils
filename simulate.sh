@@ -4,3 +4,4 @@
 export PATH="$(pwd)/bin:$PATH"
 echo "Added $(pwd)/bin to PATH for this session. Entering highway shell..." 
 highway
+echo "Exiting highway shell..."
