@@ -81,7 +81,9 @@ UTILS = \
 	g \
 	qmachine \
 	swirl \
-	hserve
+	hserve \
+	zip \
+	unzip
 
 # Default target: build all utilities
 all: $(UTILS)
