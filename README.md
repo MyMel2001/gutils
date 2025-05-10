@@ -55,6 +55,72 @@ A collection of basic Unix-like utilities written in Go, inspired by BusyBox and
 - killall
 - bse (basic simple editor, vi-like)
 - whoami
+- base64
+- basename
+- calc (minimal calculator)
+- bse (basic simple editor, vi-like)
+- cat
+- chmod
+- chown
+- cp
+- cut
+- date
+- dd
+- df
+- dirname
+- dosu
+- du
+- echo
+- env
+- expand
+- false
+- find
+- fold
+- grep
+- head
+- highway (minimal shell)
+- id
+- kill
+- killall
+- ln (see shortcut)
+- ls
+- lsblk
+- mkdir
+- mv
+- nl
+- no
+- paste
+- printf
+- ps
+- pwd
+- realpath
+- rm
+- seq
+- sha256sum
+- sha512sum
+- shortcut (ln-like command)
+- sleep
+- sort (multithreaded)
+- split
+- stat
+- sum
+- tac
+- tail
+- tar (create/extract tar archives, supports gzip compression)
+- tee
+- test
+- touch
+- tr
+- true
+- unexpand
+- uniq
+- unlink
+- wc
+- whereis
+- who
+- whoami
+- xargs
+- yes
 
 ## Project Structure
 
