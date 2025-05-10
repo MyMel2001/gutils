@@ -68,7 +68,13 @@ UTILS = \
 	whoami \
 	xargs \
 	yes \
-	mount
+	mount \
+	ccomp \
+	ping \
+	ip \
+	wifi-connect \
+	ethernet-connect \
+	dhcp-get
 
 # Default target: build all utilities
 all: $(UTILS)
@@ -144,7 +150,18 @@ BINARIES = \
 	bin/unexpand \
 	bin/unlink \
 	bin/who \
-	bin/mount
+	bin/mount \
+	bin/dosu \
+	bin/xargs \
+	bin/sort \
+	bin/lsblk \
+	bin/dirname \
+	bin/ccomp \
+	bin/ping \
+	bin/ip \
+	bin/wifi-connect \
+	bin/ethernet-connect \
+	bin/dhcp-get
 
 bin/%: cmd/%/main.go
 	@mkdir -p bin
