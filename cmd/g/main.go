@@ -11,10 +11,10 @@ import (
 	"github.com/traefik/yaegi/stdlib"
 )
 
-// gcomp: Go code evaluator using Yaegi, with REPL mode
+// g: Go code evaluator using Yaegi, with REPL mode
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "gcomp: usage: gcomp SOURCE.go | - (eval), gcomp repl (REPL)")
+		fmt.Fprintln(os.Stderr, "g: usage: g SOURCE.go | - (eval), g repl (REPL)")
 		os.Exit(1)
 	}
 
@@ -31,21 +31,21 @@ func main() {
 		code, err = os.ReadFile(os.Args[1])
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "gcomp: error reading code:", err)
+		fmt.Fprintln(os.Stderr, "g: error reading code:", err)
 		os.Exit(1)
 	}
 	i := interp.New(interp.Options{})
 	i.Use(stdlib.Symbols)
 	_, err = i.Eval(string(code))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "gcomp: eval error:", err)
+		fmt.Fprintln(os.Stderr, "g: eval error:", err)
 		os.Exit(1)
 	}
 }
 
 // repl provides an interactive Go REPL using Yaegi
 func repl() {
-	fmt.Println("gcomp REPL (type Go code, end with Ctrl+D)")
+	fmt.Println("g REPL (type Go code, end with Ctrl+D)")
 	i := interp.New(interp.Options{})
 	i.Use(stdlib.Symbols)
 	scanner := bufio.NewScanner(os.Stdin)
