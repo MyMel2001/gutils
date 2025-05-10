@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"qmachine/commands"
+	"gutils/cmd/qmachine/commands"
 )
 
 // REPL represents the quantum computer REPL

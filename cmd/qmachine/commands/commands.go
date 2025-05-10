@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"qmachine/help"
-	"qmachine/quantum"
+	"gutils/cmd/qmachine/help"
+	"gutils/cmd/qmachine/quantum"
 )
 
 // Handler handles REPL command execution

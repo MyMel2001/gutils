@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"qmachine/quantum"
-	"qmachine/repl"
+	"gutils/cmd/qmachine/quantum"
+	"gutils/cmd/qmachine/repl"
 )
 
+// QMachine is a quantum computer simulator. Ported from https://github.com/SammyLord/qmachine
 func main() {
 	// Define command-line flags
 	numQubits := flag.Int("qubits", 2000, "Number of qubits for the quantum computer")

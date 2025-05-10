@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"qmachine/quantum"
+	"gutils/cmd/qmachine/quantum"
 )
 
 // REPL represents the quantum computer REPL
