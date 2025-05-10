@@ -1,0 +1,90 @@
+# Makefile.kernel: Build a minimal Linux distro with custom Go utilities
+
+KERNEL_VERSION = 6.8.9
+KERNEL_URL = https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$(KERNEL_VERSION).tar.xz
+KERNEL_ARCHIVE = linux-$(KERNEL_VERSION).tar.xz
+KERNEL_DIR = linux-$(KERNEL_VERSION)
+ROOTFS_DIR = rootfs
+INITRAMFS = initramfs.cpio.gz
+
+# Set this to the password you want for dosu (required)
+DOSU_PASS ?=
+
+ISO_IMAGE = gutils-linux.iso
+ISO_DIR = iso
+
+.PHONY: all kernel utils rootfs image clean iso
+
+all: kernel utils rootfs image
+
+# Download and extract the Linux kernel
+$(KERNEL_ARCHIVE):
+	wget -c $(KERNEL_URL)
+
+$(KERNEL_DIR): $(KERNEL_ARCHIVE)
+	tar -xf $(KERNEL_ARCHIVE)
+
+kernel: $(KERNEL_DIR)
+	cd $(KERNEL_DIR) && make defconfig && make -j$(nproc)
+
+# Build all Go utilities using the main Makefile
+utils:
+	$(MAKE) -f Makefile utils
+
+# Create a minimal root filesystem and copy utilities
+rootfs: utils
+	rm -rf $(ROOTFS_DIR)
+	mkdir -p $(ROOTFS_DIR)/bin
+	# Copy all built binaries from bin/ to rootfs/bin (no utility list duplication)
+	find bin -type f -executable -exec cp {} $(ROOTFS_DIR)/bin/ \;
+	cp -a /lib $(ROOTFS_DIR)/ || true
+	cp -a /lib64 $(ROOTFS_DIR)/ || true
+	cp -a /usr/lib $(ROOTFS_DIR)/ || true
+	# Set up dosu password and permissions
+	@if [ -z "$(DOSU_PASS)" ]; then \
+		echo "ERROR: DOSU_PASS must be set (e.g. make rootfs DOSU_PASS=yourpassword)"; \
+		exit 1; \
+	fi
+	mkdir -p $(ROOTFS_DIR)/etc
+	# Hash the password and write to dosu_passwd
+	echo -n "$(DOSU_PASS)" | sha256sum | awk '{print $$1}' > $(ROOTFS_DIR)/etc/dosu_passwd
+	chmod 600 $(ROOTFS_DIR)/etc/dosu_passwd
+	# Set dosu binary permissions (setuid root)
+	chown root:root $(ROOTFS_DIR)/bin/dosu || true
+	chmod u+s $(ROOTFS_DIR)/bin/dosu || true
+	# Create init script
+	echo '#!/bin/sh' > $(ROOTFS_DIR)/init
+	echo 'exec /bin/highway' >> $(ROOTFS_DIR)/init
+	chmod +x $(ROOTFS_DIR)/init
+
+# Create an initramfs image
+image: rootfs
+	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
+
+clean:
+	rm -rf $(KERNEL_DIR) $(KERNEL_ARCHIVE) $(ROOTFS_DIR) bin $(INITRAMFS) 
+
+iso: image kernel
+	# Prepare ISO directory structure
+	rm -rf $(ISO_DIR)
+	mkdir -p $(ISO_DIR)/boot/isolinux
+	cp $(KERNEL_DIR)/arch/x86/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp $(KERNEL_DIR)/arch/x86/boot/compressed/vmlinux $(ISO_DIR)/boot/vmlinuz
+	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
+	echo 'DEFAULT linux' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'LABEL linux' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo '  KERNEL /boot/vmlinuz' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo '  INITRD /boot/initramfs.cpio.gz' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo '  APPEND quiet' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	# Copy isolinux.bin (user must have syslinux installed)
+	cp /usr/lib/ISOLINUX/isolinux.bin $(ISO_DIR)/boot/isolinux/ || cp /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ || true
+	# Create ISO image
+	if command -v xorriso >/dev/null; then \
+		xorriso -as mkisofs -o $(ISO_IMAGE) -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
+		-no-emul-boot -boot-load-size 4 -boot-info-table -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
+		$(ISO_DIR); \
+	elif command -v genisoimage >/dev/null; then \
+		genisoimage -o $(ISO_IMAGE) -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
+		-no-emul-boot -boot-load-size 4 -boot-info-table $(ISO_DIR); \
+	else \
+		echo 'No ISO creation tool found (xorriso or genisoimage required)'; exit 1; \
+	fi 

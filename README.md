@@ -21,7 +21,7 @@ A collection of basic Unix-like utilities written in Go, inspired by BusyBox and
 ## Project Structure
 
 ```
-sneed-coreutils/
+gutils/
 ├── cmd/
 │   ├── highway/
 │   │   └── main.go

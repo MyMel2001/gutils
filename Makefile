@@ -1,4 +1,4 @@
-# Makefile for Sneed Coreutils
+# Makefile for Gutils
 
 # List of utilities
 UTILS = \
@@ -83,7 +83,9 @@ UTILS = \
 	swirl \
 	hserve \
 	zip \
-	unzip
+	unzip \
+	install-distro \
+	expand-fs
 
 # Default target: build all utilities
 all: $(UTILS)
@@ -97,8 +99,23 @@ $(UTILS):
 clean:
 	rm -rf bin
 
+# Build a ready-to-use Linux image with all utilities and custom rootfs
+# Usage: make distro DOSU_PASS=yourpassword
+.PHONY: distro
+
+distro:
+	@if [ -z "$(DOSU_PASS)" ]; then \
+		echo "ERROR: DOSU_PASS must be set (e.g. make distro DOSU_PASS=yourpassword)"; \
+		exit 1; \
+	fi
+	$(MAKE) all
+	$(MAKE) -f Makefile.kernel all DOSU_PASS="$(DOSU_PASS)"
+
 .PHONY: all clean $(UTILS)
 
 bin/%: cmd/%/main.go
 	@mkdir -p bin
 	go build -o $@ ./cmd/$*/ 
+
+sudo chown root:root bin/dosu
+sudo chmod u+s bin/dosu

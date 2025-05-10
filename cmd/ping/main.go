@@ -34,7 +34,7 @@ func main() {
 		Body: &icmp.Echo{
 			ID:   os.Getpid() & 0xffff,
 			Seq:  1,
-			Data: []byte("SneedPing"),
+			Data: []byte("PING"),
 		},
 	}
 	b, err := msg.Marshal(nil)
