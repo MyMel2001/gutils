@@ -15,49 +15,8 @@ A collection of basic Unix-like utilities written in Go, inspired by BusyBox and
 - printf
 - mkdir
 - grep
-- head
-- alias
-- tail
-- wc
-- dosu
-- touch
-- sha256sum
-- sha512sum
-- base64
-- chmod
-- chown
-- shortcut (ln-like command)
-- du
-- pwd
-- false
-- true
-- sleep
-- dirname
-- lsblk
-- whereis
-- realpath
-- dd
-- sort (multithreaded)
-- env
-- kill
-- ps
-- uname
-- date
-- df
-- find
-- tar (create/extract tar archives, supports gzip compression)
-- tee
-- test
-- uniq
-- xargs
-- yes
-- no
-- killall
-- whoami
-- base64
-- basename
-- calc (minimal calculator)
-- bse (basic simple editor, vi-like)
+
+***... and many, many more!***
 
 ## Project Structure
 

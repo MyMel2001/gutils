@@ -1,0 +1,24 @@
+# Quantum RISC-V Example Program
+# This program demonstrates both classical and quantum operations
+
+# Initialize quantum registers
+qinit x1    # Initialize x1 as a quantum register
+qinit x2    # Initialize x2 as a quantum register
+
+# Apply quantum gates
+qapply x1, x1, 3  # Apply Hadamard gate to x1
+qapply x2, x2, 0  # Apply X gate to x2
+
+# Entangle the registers
+qentangle x3, x1, x2  # Entangle x1 and x2, store result in x3
+
+# Classical computation
+addi x4, x0, 42      # Load immediate value 42 into x4
+addi x5, x0, 58      # Load immediate value 58 into x5
+add x6, x4, x5       # Add x4 and x5, store in x6
+
+# Measure quantum register
+qmeasure x7, x3      # Measure x3 and store result in x7
+
+# Final classical computation
+add x8, x6, x7       # Add classical result (x6) with quantum measurement (x7) 

@@ -59,6 +59,7 @@ UTILS = \
 	touch \
 	tr \
 	true \
+	uname \
 	unexpand \
 	uniq \
 	unlink \
@@ -69,12 +70,18 @@ UTILS = \
 	xargs \
 	yes \
 	mount \
-	ccomp \
 	ping \
 	ip \
 	wifi-connect \
 	ethernet-connect \
-	dhcp-get
+	dhcp-get \
+	porridge \
+	interwebz \
+	lnkr \
+	g \
+	qmachine \
+	swirl \
+	hserve
 
 # Default target: build all utilities
 all: $(UTILS)
@@ -89,79 +96,6 @@ clean:
 	rm -rf bin
 
 .PHONY: all clean $(UTILS)
-
-BINARIES = \
-	bin/cat \
-	bin/echo \
-	bin/ls \
-	bin/cp \
-	bin/mv \
-	bin/rm \
-	bin/mkdir \
-	bin/touch \
-	bin/pwd \
-	bin/true \
-	bin/false \
-	bin/head \
-	bin/tail \
-	bin/wc \
-	bin/sleep \
-	bin/date \
-	bin/env \
-	bin/uname \
-	bin/df \
-	bin/du \
-	bin/ps \
-	bin/kill \
-	bin/killall \
-	bin/yes \
-	bin/no \
-	bin/tee \
-	bin/test \
-	bin/uniq \
-	bin/xargs \
-	bin/find \
-	bin/tar \
-	bin/sha256sum \
-	bin/sha512sum \
-	bin/whereis \
-	bin/realpath \
-	bin/shortcut \
-	bin/chmod \
-	bin/chown \
-	bin/dd \
-	bin/base64 \
-	bin/bse \
-	bin/highway \
-	bin/calc \
-	bin/basename \
-	bin/cut \
-	bin/expand \
-	bin/fold \
-	bin/id \
-	bin/nl \
-	bin/paste \
-	bin/seq \
-	bin/split \
-	bin/stat \
-	bin/sum \
-	bin/tac \
-	bin/tr \
-	bin/unexpand \
-	bin/unlink \
-	bin/who \
-	bin/mount \
-	bin/dosu \
-	bin/xargs \
-	bin/sort \
-	bin/lsblk \
-	bin/dirname \
-	bin/ccomp \
-	bin/ping \
-	bin/ip \
-	bin/wifi-connect \
-	bin/ethernet-connect \
-	bin/dhcp-get
 
 bin/%: cmd/%/main.go
 	@mkdir -p bin

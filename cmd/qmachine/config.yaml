@@ -1,0 +1,29 @@
+server:
+  port: 2001  # port
+
+cursor:
+  enabled: true
+  checksum: ''  # random device id
+  authorization: "replaceme"
+  timeout: 100
+  proxy: ""  # Leave empty for direct connection
+  concurrency: 1  # Number of concurrent requests allowed
+
+# Disable other services by default
+bing:
+  enabled: false
+
+coze:
+  enabled: false
+
+you:
+  enabled: false
+
+claude:
+  enabled: false
+
+windsurf:
+  enabled: false
+
+blackbox:
+  enabled: false 

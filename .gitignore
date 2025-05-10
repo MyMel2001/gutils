@@ -37,3 +37,6 @@ Thumbs.db
 
 # Do not ignore source code in /cmd/
 !/cmd/
+
+porridge_installed_sources.txt
+porridge_sources.txt

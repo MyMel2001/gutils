@@ -9,4 +9,7 @@ require (
 	golang.org/x/term v0.32.0
 )
 
-require golang.org/x/sys v0.33.0 // indirect
+require (
+	github.com/traefik/yaegi v0.16.1 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+)
