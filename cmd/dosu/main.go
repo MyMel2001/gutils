@@ -50,12 +50,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Execute the command as root
-	cmd := exec.Command(os.Args[1], os.Args[2:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	// Execute the command as root using syscall.Exec
+	cmdPath, err := exec.LookPath(os.Args[1])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "dosu: command not found:", os.Args[1])
+		os.Exit(1)
+	}
+	args := os.Args[1:]
+	env := os.Environ()
+	if err := syscall.Exec(cmdPath, args, env); err != nil {
 		fmt.Fprintln(os.Stderr, "dosu: error running command:", err)
 		os.Exit(1)
 	}

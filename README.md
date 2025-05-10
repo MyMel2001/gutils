@@ -1,4 +1,6 @@
-# Sneed Coreutils
+# Gutils
+
+_Pronounced like "goo-tills"_
 
 A collection of basic Unix-like utilities written in Go, inspired by BusyBox. Each utility is a separate binary for simplicity and modularity.
 
@@ -17,6 +19,25 @@ A collection of basic Unix-like utilities written in Go, inspired by BusyBox. Ea
 - alias
 - tail
 - wc
+- dosu
+- touch
+- sha256sum
+- sha512sum
+- base64
+- chmod
+- chown
+- shortcut (ln-like commnad)
+- du
+- pwd
+- false
+- true
+- sleep
+- dirname
+- lsblk
+- whereis
+- realpath
+- dd
+- sort (multithreaded)
 
 ## Project Structure
 
