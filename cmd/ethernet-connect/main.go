@@ -3,35 +3,50 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
-// ethernet-connect: lists ethernet interfaces and prints a message about connecting (no real connection)
+// ethernet-connect: brings up the specified ethernet interface using netlink
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Fprintln(os.Stderr, "ethernet-connect: usage: ethernet-connect INTERFACE")
 		os.Exit(1)
 	}
-	iface := os.Args[1]
-	// List likely ethernet interfaces (Linux: /sys/class/net/*, skip loopback and wireless)
-	files, err := os.ReadDir("/sys/class/net")
+	ifaceName := os.Args[1]
+
+	links, err := netlink.LinkList()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "ethernet-connect: cannot list interfaces:", err)
+		fmt.Fprintf(os.Stderr, "ethernet-connect: cannot list interfaces: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println("Available ethernet interfaces:")
-	any := false
-	for _, f := range files {
-		if f.Name() == "lo" {
+	found := false
+	for _, link := range links {
+		attrs := link.Attrs()
+		if attrs == nil || attrs.Name == "lo" || (attrs.Flags&unix.IFF_LOOPBACK != 0) {
 			continue
 		}
-		if _, err := os.Stat("/sys/class/net/" + f.Name() + "/wireless"); err == nil {
-			continue
+		if attrs.EncapType == "ether" {
+			fmt.Printf("  %s\n", attrs.Name)
+			if attrs.Name == ifaceName {
+				found = true
+			}
 		}
-		fmt.Printf("  %s\n", f.Name())
-		any = true
 	}
-	if !any {
-		fmt.Println("  (none found)")
+	if !found {
+		fmt.Fprintf(os.Stderr, "ethernet-connect: interface '%s' not found or not ethernet\n", ifaceName)
+		os.Exit(1)
 	}
-	fmt.Printf("Would connect ethernet interface '%s' (not implemented)\n", iface)
+	link, err := netlink.LinkByName(ifaceName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ethernet-connect: failed to get interface '%s': %v\n", ifaceName, err)
+		os.Exit(1)
+	}
+	if err := netlink.LinkSetUp(link); err != nil {
+		fmt.Fprintf(os.Stderr, "ethernet-connect: failed to bring up '%s': %v\n", ifaceName, err)
+		os.Exit(1)
+	}
+	fmt.Printf("Successfully brought up ethernet interface '%s'\n", ifaceName)
 }
