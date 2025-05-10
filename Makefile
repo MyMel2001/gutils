@@ -116,6 +116,3 @@ distro:
 bin/%: cmd/%/main.go
 	@mkdir -p bin
 	go build -o $@ ./cmd/$*/ 
-
-sudo chown root:root bin/dosu
-sudo chmod u+s bin/dosu
