@@ -26,7 +26,7 @@ A collection of basic Unix-like utilities written in Go, inspired by BusyBox and
 - base64
 - chmod
 - chown
-- shortcut (ln-like commnad)
+- shortcut (ln-like command)
 - du
 - pwd
 - false
@@ -38,6 +38,23 @@ A collection of basic Unix-like utilities written in Go, inspired by BusyBox and
 - realpath
 - dd
 - sort (multithreaded)
+- env
+- kill
+- ps
+- uname
+- date
+- df
+- find
+- tar (create/extract tar archives, supports gzip compression)
+- tee
+- test
+- uniq
+- xargs
+- yes
+- no
+- killall
+- bse (basic simple editor, vi-like)
+- whoami
 
 ## Project Structure
 
@@ -142,3 +159,15 @@ This will fetch `golang.org/x/term` and any other required modules.
 
 ## License
 MIT 
+
+## Example: Using tar with gzip compression
+
+Create a compressed archive:
+```
+./bin/tar -c -f archive.tar.gz file1 dir2
+```
+
+Extract a compressed archive:
+```
+./bin/tar -x -f archive.tar.gz
+``` 
