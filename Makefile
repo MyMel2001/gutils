@@ -67,7 +67,8 @@ UTILS = \
 	who \
 	whoami \
 	xargs \
-	yes
+	yes \
+	mount
 
 # Default target: build all utilities
 all: $(UTILS)
@@ -142,7 +143,8 @@ BINARIES = \
 	bin/tr \
 	bin/unexpand \
 	bin/unlink \
-	bin/who
+	bin/who \
+	bin/mount
 
 bin/%: cmd/%/main.go
 	@mkdir -p bin
