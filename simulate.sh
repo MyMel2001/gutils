@@ -2,6 +2,6 @@
 # Usage: source ./add_bin_to_path.sh
 # Temporarily adds ./bin to the beginning of your $PATH for this shell session.
 export PATH="$(pwd)/bin:$PATH"
-echo "Added $(pwd)/bin to PATH for this session. Entering highway shell..." 
+echo "Added $(pwd)/bin to PATH for this session. Entering the highway shell..." 
 highway
 echo "Exiting highway shell..."
