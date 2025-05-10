@@ -1,7 +1,7 @@
 # Makefile for Sneed Coreutils
 
 # List of utilities
-UTILS = highway ls cat echo cp mv rm printf mkdir grep head alias tail wc dosu touch sha256sum chmod chown shortcut
+UTILS = highway ls cat echo cp mv rm printf mkdir grep head alias tail wc dosu touch sha256sum chmod chown shortcut sha512sum base64
 
 # Default target: build all utilities
 all: $(UTILS)
