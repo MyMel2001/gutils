@@ -18,6 +18,12 @@ node_modules/
 
 # Ignore any build artifacts
 /build/
+linux*
+*.iso
+initrd*
+vmlinuz*
+rootfs*
+initramfs*
 
 # Binaries for programs and plugins
 *.exe~
