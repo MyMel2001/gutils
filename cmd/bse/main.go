@@ -25,6 +25,8 @@ func main() {
 		lines = strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
 	}
 	row, col := 0, 0
+	topLine := 0
+	leftCol := 0
 	mode := "NORMAL"
 	status := ""
 	oldState, _ := term.MakeRaw(int(os.Stdin.Fd()))
@@ -35,24 +37,41 @@ func main() {
 	stdin := bufio.NewReader(os.Stdin)
 	cmd := ""
 	width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+	windowHeight := height - 1
 	for {
+		// Adjust topLine for vertical scrolling
+		if row < topLine {
+			topLine = row
+		}
+		if row >= topLine+windowHeight {
+			topLine = row - windowHeight + 1
+		}
+		// Adjust leftCol for horizontal scrolling
+		cursorVisCol := visualCol(lines[row], col)
+		if cursorVisCol < leftCol {
+			leftCol = cursorVisCol
+		}
+		if cursorVisCol >= leftCol+width {
+			leftCol = cursorVisCol - width + 1
+		}
 		clearScreen()
-		for i := 0; i < height-1; i++ {
-			if i < len(lines) {
-				if i == row {
-					printLineHighlighted(lines[i], width, col)
+		for i := 0; i < windowHeight; i++ {
+			lineIdx := topLine + i
+			if lineIdx < len(lines) {
+				if lineIdx == row {
+					printLineHighlightedScroll(lines[lineIdx], width, col, leftCol)
 				} else {
-					printLine(lines[i], width)
+					printLineScroll(lines[lineIdx], width, leftCol)
 				}
 			} else {
 				fmt.Print("\r\n")
 			}
 		}
 		fmt.Printf("\x1b[7m--%s-- %s\x1b[0m\r\n", mode, status)
-		cursorCol := visualCol(lines[row], col)
-		fmt.Printf("\x1b[%d;%dH", row+1, cursorCol+1)
+		cursorCol := visualCol(lines[row], col) - leftCol
+		fmt.Printf("\x1b[%d;%dH", row-topLine+1, cursorCol+1)
 		b, _ := stdin.ReadByte()
-		if b == 0x1b { // Escape sequence
+		if b == 0x1b {
 			seq, _ := stdin.Peek(2)
 			if len(seq) == 2 && seq[0] == '[' {
 				stdin.Discard(2)
@@ -119,8 +138,8 @@ func main() {
 			if b == 27 {
 				mode = "NORMAL"
 				continue
-			} // ESC
-			if b == 127 || b == 8 { // Backspace
+			}
+			if b == 127 || b == 8 {
 				if col > 0 {
 					lines[row] = lines[row][:col-1] + lines[row][col:]
 					col--
@@ -172,18 +191,28 @@ func main() {
 
 func clearScreen() { fmt.Print("\x1b[2J\x1b[H") }
 
-func printLine(s string, width int) {
+func printLineScroll(s string, width, leftCol int) {
 	display := expandTabs(s)
+	if leftCol > len(display) {
+		display = ""
+	} else {
+		display = display[leftCol:]
+	}
 	if len(display) > width {
 		display = display[:width]
 	}
 	fmt.Printf("%-*s\r\n", width, display)
 }
 
-func printLineHighlighted(s string, width, col int) {
+func printLineHighlightedScroll(s string, width, col, leftCol int) {
 	display := expandTabs(s)
 	if len(display) == 0 {
 		display = " "
+	}
+	if leftCol > len(display) {
+		display = ""
+	} else {
+		display = display[leftCol:]
 	}
 	if len(display) > width {
 		display = display[:width]
