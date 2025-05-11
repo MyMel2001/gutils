@@ -88,11 +88,15 @@ iso: image kernel
 	mkdir -p $(ISO_DIR)/boot/isolinux
 	cp $(KERNEL_DIR)/arch/x86/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp $(KERNEL_DIR)/arch/x86/boot/compressed/vmlinux $(ISO_DIR)/boot/vmlinuz
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
-	echo 'DEFAULT linux' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'UI menu.c32' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'PROMPT 0' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'TIMEOUT 50' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'DEFAULT linux' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	echo 'LABEL linux' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	echo '  KERNEL /boot/vmlinuz' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	echo '  INITRD /boot/initramfs.cpio.gz' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	echo '  APPEND quiet' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
+
 	# Copy isolinux.bin (user must have syslinux installed)
 	cp /usr/lib/ISOLINUX/isolinux.bin $(ISO_DIR)/boot/isolinux/ || cp /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ || true
 	# First, ensure all required SYSLINUX files are in the boot directory
