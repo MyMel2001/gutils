@@ -1,6 +1,6 @@
 # Makefile.kernel: Build a minimal Linux distro with custom Go utilities
 
-KERNEL_VERSION = 6.12.28
+KERNEL_VERSION = 6.8.9
 KERNEL_URL = https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$(KERNEL_VERSION).tar.xz
 KERNEL_ARCHIVE = linux-$(KERNEL_VERSION).tar.xz
 KERNEL_DIR = linux-$(KERNEL_VERSION)
