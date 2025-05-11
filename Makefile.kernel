@@ -25,10 +25,7 @@ $(KERNEL_DIR): $(KERNEL_ARCHIVE)
 	tar -xf $(KERNEL_ARCHIVE)
 
 kernel: $(KERNEL_DIR)
-	cd $(KERNEL_DIR)
-	make mrproper
-	make defconfig
-	make KCFLAGS=-std=gnu89 CFLAGS=-std=gnu89 -j2
+	cd $(KERNEL_DIR) && make mrproper && make defconfig && make KCFLAGS=-std=gnu89 CFLAGS=-std=gnu89 -j2
 
 # Build all Go utilities using the main Makefile
 utils:
