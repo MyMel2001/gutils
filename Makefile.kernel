@@ -54,28 +54,24 @@ rootfs: utils
 	chown root:root $(ROOTFS_DIR)/bin/dosu || true
 	chmod u+s $(ROOTFS_DIR)/bin/dosu || true
 	mkdir $(ROOTFS_DIR)/root
+
 	# Create init script
-	cat > $(ROOTFS_DIR)/init << 'EOF'
-	#!/bin/highway
-	# Basic init script for gutils Linux
+	echo '#!/bin/highway' > $(ROOTFS_DIR)/init
+	echo '# Basic init script for gutils Linux' >>$(ROOTFS_DIR)/init
+	echo '# Mount essential virtual filesystems' >>$(ROOTFS_DIR)/init
+	echo 'mount none /proc proc' >>$(ROOTFS_DIR)/init
+	echo 'mount none /sys sysfs' >>$(ROOTFS_DIR)/init
+	echo 'mount none /dev devtmpfs' >>$(ROOTFS_DIR)/init
+	echo '# Set up environment' >>$(ROOTFS_DIR)/init
+	echo 'export PATH=/bin:/sbin:/usr/bin:/usr/sbin' >> $(ROOTFS_DIR)/init
+	echo 'export HOME=/root' >>$(ROOTFS_DIR)/init
+	echo 'export TERM=linux' >>$(ROOTFS_DIR)/init
+	echo '# Display boot message' >>$(ROOTFS_DIR)/init
+	echo 'echo "Booting gutils Linux..."' >>$(ROOTFS_DIR)/init
+	echo 'echo "Starting highway shell..."' >>$(ROOTFS_DIR)/init
+	echo '# Execute the custom shell' >>$(ROOTFS_DIR)/init
+	echo 'exec /bin/highway' >>$(ROOTFS_DIR)/init
 
-	# Mount essential virtual filesystems
-	mount none /proc proc
-	mount none /sys sysfs
-	mount none /dev devtmpfs
-	
-	# Set up environment
-	export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-	export HOME=/root
-	export TERM=linux
-
-	# Display boot message
-	echo "Booting gutils Linux..."
-	echo "Starting highway shell..."
-
-	# Execute the custom shell
-	exec /bin/highway
-	EOF
 # Create an initramfs image
 image: rootfs
 	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
@@ -103,6 +99,20 @@ iso: image kernel
 	mkdir -p $(ISO_DIR)/boot/isolinux/
 	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
+
+	# Add ISOLINUX config
+	echo 'DEFAULT gutils' > $(ISO_DIR)/boot/isolinux.cfg
+	echo 'TIMEOUT 30'
+	echo 'PROMPT 1'
+
+	echo 'LABEL gutils'
+	echo '	MENU LABEL Gutils Linux'
+	echo '	LINUX /boot/vmlinuz'
+	echo '	INITRD /boot/initrd.img'
+	echo '	APPEND init=/init rw quiet'
+	cp $(ISO_DIR)/boot/isolinux.cfg $(ISO_DIR)/boot/isolinux
+
+	# Add proper permissions
 	chmod 644 $(ISO_DIR)/boot/isolinux/*
 
 	# Then create the ISO with proper options
