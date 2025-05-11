@@ -1,6 +1,6 @@
 # Makefile.kernel: Build a minimal Linux distro with custom Go utilities
 
-KERNEL_VERSION = 6.8.9
+KERNEL_VERSION = 6.12.28
 KERNEL_URL = https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$(KERNEL_VERSION).tar.xz
 KERNEL_ARCHIVE = linux-$(KERNEL_VERSION).tar.xz
 KERNEL_DIR = linux-$(KERNEL_VERSION)
@@ -25,7 +25,10 @@ $(KERNEL_DIR): $(KERNEL_ARCHIVE)
 	tar -xf $(KERNEL_ARCHIVE)
 
 kernel: $(KERNEL_DIR)
-	cd $(KERNEL_DIR) && export KCFLAGS=-std=gnu89 && export CFLAGS=-std=gnu89 && make mrproper && make defconfig && make -j2 # better slow and safe than stuck and sorry!
+	cd $(KERNEL_DIR)
+	make mrproper
+	make defconfig
+	make KCFLAGS=-std=gnu89 CFLAGS=-std=gnu89 -j2
 
 # Build all Go utilities using the main Makefile
 utils:
