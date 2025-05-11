@@ -82,6 +82,7 @@ iso: image kernel
 	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	chmod 644 $(ISO_DIR)/boot/isolinux/*
+	cp -a rootfs/* $(ISO_DIR)
 
 	# Then create the ISO with proper options
 	if command -v xorriso >/dev/null; then \
