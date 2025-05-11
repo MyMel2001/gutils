@@ -18,8 +18,7 @@ When building in Fedora, you may find that there's not a "isolinux" package. Her
 
 ```bash
 sudo dnf install syslinux
-sudo mkdir -p /usr/lib/ISOLINUX/
-sudo ln -s /usr/share/syslinux/isohdpfx.bin /usr/lib/ISOLINUX/isohdpfx.bin
+sudo ln -s /usr/share/syslinux /usr/lib/ISOLINUX
 ```
 
 This should fix ISO creation as of Fedora 42.
