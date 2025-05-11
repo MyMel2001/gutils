@@ -112,10 +112,12 @@ iso: image kernel
 	echo '	APPEND init=/init rw quiet'
 	cp $(ISO_DIR)/boot/isolinux.cfg $(ISO_DIR)/boot/isolinux
 
-	cp -r $(ROOTFS_DIR)/* $(ISO_DIR)
+	# Copy RootFS to the ISO scratch directory.
+	cp -a $(ROOTFS_DIR) $(ISO_DIR)
 
 	# Add proper permissions
 	chmod 644 $(ISO_DIR)/boot/isolinux/*
+	chmod +x $(ISO_DIR)/init
 
 	# Then create the ISO with proper options
 	if command -v xorriso >/dev/null; then \
