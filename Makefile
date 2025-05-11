@@ -111,6 +111,17 @@ distro:
 	$(MAKE) all
 	$(MAKE) -f Makefile.kernel all DOSU_PASS="$(DOSU_PASS)"
 
+# Build a ready-to-use Linux image with all utilities and custom rootfs
+# Usage: make quickreimage DOSU_PASS=yourpassword	
+.PHONY: quickreimage
+
+quickreimage:
+	@if [ -z "$(DOSU_PASS)" ]; then \
+		echo "ERROR: DOSU_PASS must be set (e.g. make quickreimage DOSU_PASS=yourpassword)"; \
+		exit 1; \
+	fi
+	$(MAKE) -f Makefile.kernel quickreimage DOSU_PASS="$(DOSU_PASS)"
+
 # Alias for compatibility with Makefile.kernel
 utils: all
 

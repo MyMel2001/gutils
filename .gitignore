@@ -18,6 +18,7 @@ node_modules/
 
 # Ignore any build artifacts
 /build/
+/iso/
 linux*
 *.iso
 initrd*

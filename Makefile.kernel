@@ -13,9 +13,10 @@ DOSU_PASS ?=
 ISO_IMAGE = gutils-linux.iso
 ISO_DIR = iso
 
-.PHONY: all kernel utils rootfs image clean iso
+.PHONY: all kernel utils rootfs image clean iso quickreimage
 
-all: kernel utils rootfs image
+all: kernel utils rootfs image iso
+quickreimage: quickclean rootfs image iso 
 
 # Download and extract the Linux kernel
 $(KERNEL_ARCHIVE):
@@ -37,9 +38,9 @@ rootfs: utils
 	mkdir -p $(ROOTFS_DIR)/bin
 	# Copy all built binaries from bin/ to rootfs/bin (no utility list duplication)
 	find bin -type f -executable -exec cp {} $(ROOTFS_DIR)/bin/ \;
-	cp -a /lib $(ROOTFS_DIR)/ || true
-	cp -a /lib64 $(ROOTFS_DIR)/ || true
-	cp -a /usr/lib $(ROOTFS_DIR)/ || true
+	cp -r /lib $(ROOTFS_DIR)/ || true
+	cp -r /lib64 $(ROOTFS_DIR)/ || true
+	cp -r /usr/lib $(ROOTFS_DIR)/ || true
 	# Set up dosu password and permissions
 	@if [ -z "$(DOSU_PASS)" ]; then \
 		echo "ERROR: DOSU_PASS must be set (e.g. make rootfs DOSU_PASS=yourpassword)"; \
@@ -52,17 +53,38 @@ rootfs: utils
 	# Set dosu binary permissions (setuid root)
 	chown root:root $(ROOTFS_DIR)/bin/dosu || true
 	chmod u+s $(ROOTFS_DIR)/bin/dosu || true
+	mkdir $(ROOTFS_DIR)/root
 	# Create init script
-	echo '#!/bin/sh' > $(ROOTFS_DIR)/init
-	echo 'exec /bin/highway' >> $(ROOTFS_DIR)/init
-	chmod +x $(ROOTFS_DIR)/init
+	cat > $(ROOTFS_DIR)/init << 'EOF'
+	#!/bin/highway
+	# Basic init script for gutils Linux
 
+	# Mount essential virtual filesystems
+	mount none /proc proc
+	mount none /sys sysfs
+	mount none /dev devtmpfs
+	
+	# Set up environment
+	export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+	export HOME=/root
+	export TERM=linux
+
+	# Display boot message
+	echo "Booting gutils Linux..."
+	echo "Starting highway shell..."
+
+	# Execute the custom shell
+	exec /bin/highway
+	EOF
 # Create an initramfs image
 image: rootfs
 	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
 
 clean:
 	rm -rf $(KERNEL_DIR) $(KERNEL_ARCHIVE) $(ROOTFS_DIR) bin $(INITRAMFS) 
+
+quickclean:
+	rm -rf $(ROOTFS_DIR) $(INITRAMFS) 
 
 iso: image kernel
 	# Prepare ISO directory structure
@@ -82,7 +104,6 @@ iso: image kernel
 	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	chmod 644 $(ISO_DIR)/boot/isolinux/*
-	cp -a rootfs/* $(ISO_DIR)
 
 	# Then create the ISO with proper options
 	if command -v xorriso >/dev/null; then \
