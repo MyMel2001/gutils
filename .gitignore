@@ -24,6 +24,7 @@ initrd*
 vmlinuz*
 rootfs*
 initramfs*
+*.qcow2
 
 # Binaries for programs and plugins
 *.exe~

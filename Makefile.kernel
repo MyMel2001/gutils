@@ -77,14 +77,36 @@ iso: image kernel
 	echo '  APPEND quiet' >> $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	# Copy isolinux.bin (user must have syslinux installed)
 	cp /usr/lib/ISOLINUX/isolinux.bin $(ISO_DIR)/boot/isolinux/ || cp /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ || true
-	# Create ISO image
+	# First, ensure all required SYSLINUX files are in the boot directory
+	mkdir -p $(ISO_DIR)/boot/isolinux/
+	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
+	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
+	chmod 644 $(ISO_DIR)/boot/isolinux/*
+
+	# Then create the ISO with proper options
 	if command -v xorriso >/dev/null; then \
-		xorriso -as mkisofs -o $(ISO_IMAGE) -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
-		-no-emul-boot -boot-load-size 4 -boot-info-table -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
-		$(ISO_DIR); \
+	xorriso -as mkisofs \
+	-o $(ISO_IMAGE) \
+	-b boot/isolinux/isolinux.bin \
+	-c boot/isolinux/boot.cat \
+	-no-emul-boot \
+	-boot-load-size 4 \
+	-boot-info-table \
+	-isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
+	-joliet \
+	-rock \
+	-v $(ISO_DIR); \
 	elif command -v genisoimage >/dev/null; then \
-		genisoimage -o $(ISO_IMAGE) -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
-		-no-emul-boot -boot-load-size 4 -boot-info-table $(ISO_DIR); \
+	genisoimage \
+	-o $(ISO_IMAGE) \
+	-b boot/isolinux/isolinux.bin \
+	-c boot/isolinux/boot.cat \
+	-no-emul-boot \
+	-boot-load-size 4 \
+	-boot-info-table \
+	-joliet -rock \
+	-v $(ISO_DIR) && \
+	isohybrid $(ISO_IMAGE); \
 	else \
 		echo 'No ISO creation tool found (xorriso or genisoimage required)'; exit 1; \
 	fi 
