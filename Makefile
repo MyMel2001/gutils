@@ -111,6 +111,9 @@ distro:
 	$(MAKE) all
 	$(MAKE) -f Makefile.kernel all DOSU_PASS="$(DOSU_PASS)"
 
+# Alias for compatibility with Makefile.kernel
+utils: all
+
 .PHONY: all clean $(UTILS)
 
 bin/%: cmd/%/main.go

@@ -25,11 +25,11 @@ $(KERNEL_DIR): $(KERNEL_ARCHIVE)
 	tar -xf $(KERNEL_ARCHIVE)
 
 kernel: $(KERNEL_DIR)
-	cd $(KERNEL_DIR) && make defconfig && make -j$(nproc)
+	cd $(KERNEL_DIR) && export KCFLAGS=-std=gnu89 && export CFLAGS=-std=gnu89 && make mrproper && make defconfig && make -j2 # better slow and safe than stuck and sorry!
 
 # Build all Go utilities using the main Makefile
 utils:
-	$(MAKE) -f Makefile utils
+	$(MAKE) -f Makefile
 
 # Create a minimal root filesystem and copy utilities
 rootfs: utils
