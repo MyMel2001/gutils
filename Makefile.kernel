@@ -112,6 +112,8 @@ iso: image kernel
 	echo '	APPEND init=/init rw quiet'
 	cp $(ISO_DIR)/boot/isolinux.cfg $(ISO_DIR)/boot/isolinux
 
+	cp -r $(ROOTFS_DIR)/* $(ISO_DIR)
+
 	# Add proper permissions
 	chmod 644 $(ISO_DIR)/boot/isolinux/*
 
