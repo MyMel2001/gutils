@@ -101,19 +101,21 @@ iso: image kernel
 	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 
 	# Add ISOLINUX config
-	echo 'DEFAULT gutils' > $(ISO_DIR)/boot/isolinux.cfg
-	echo 'TIMEOUT 30'
-	echo 'PROMPT 1'
-
-	echo 'LABEL gutils'
-	echo '	MENU LABEL Gutils Linux'
-	echo '	LINUX /boot/vmlinuz'
-	echo '	INITRD /boot/initrd.img'
-	echo '	APPEND init=/init rw quiet'
-	cp $(ISO_DIR)/boot/isolinux.cfg $(ISO_DIR)/boot/isolinux
+	echo 'DEFAULT gutils' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'TIMEOUT 30' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'PROMPT 1' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo ' ' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo 'LABEL gutils' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo '	MENU LABEL Gutils Linux' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo '	LINUX /boot/vmlinuz' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo '	INITRD /boot/initrd.img' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	echo '	APPEND init=/init' > $(ISO_DIR)/boot/isolinux/isolinux.cfg
 
 	# Copy RootFS to the ISO scratch directory.
-	cp -a $(ROOTFS_DIR) $(ISO_DIR)
+	cp -a $(ROOTFS_DIR)/* $(ISO_DIR)
+
+	# Double check that init script is in ISO directory
+	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
 
 	# Add proper permissions
 	chmod 644 $(ISO_DIR)/boot/isolinux/*
