@@ -1,6 +1,6 @@
 # Gutils
 
-_Pronounced like "goo-tills" - this is the repo for both the "utils" part of gutils as well as the build system for a MVP NodeMixaholic/Linux system. Note that some things are broken in the ISO releases due to very limited virtual storage._
+_Pronounced like "goo-tills" - this is the repo for both the "utils" part of gutils as well as the build system for a MVP NodeMixaholic/Linux system. Note that some things are broken in the ISO releases and builds due to very limited virtual storage._
 
 A collection of basic Unix-like utilities written in Go, inspired by BusyBox and GNU CoreUtils. Each utility is a separate binary for simplicity and modularity.
 
