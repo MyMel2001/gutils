@@ -85,7 +85,9 @@ UTILS = \
 	zip \
 	unzip \
 	install-distro \
-	expand-fs
+	expand-fs \
+	susie \
+	mkusr
 
 # Default target: build all utilities
 all: $(UTILS)

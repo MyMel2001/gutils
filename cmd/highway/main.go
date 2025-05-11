@@ -54,6 +54,11 @@ func handleBuiltins(line string) bool {
 	if line == "exit" || line == "quit" {
 		os.Exit(0)
 	}
+	if line == "clear" {
+		// Clear the terminal screen (ANSI escape code)
+		fmt.Print("\033[2J\033[H")
+		return true
+	}
 	if line == "pwd" {
 		dir, err := os.Getwd()
 		if err != nil {
@@ -149,4 +154,4 @@ func splitArgs(line string) []string {
 		args = append(args, current.String())
 	}
 	return args
-} 
+}
