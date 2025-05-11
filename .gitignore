@@ -23,7 +23,7 @@ linux*
 *.iso
 initrd*
 vmlinuz*
-rootfs*
+/rootfs/
 initramfs*
 *.qcow2
 
@@ -43,8 +43,8 @@ node_modules/
 # OS generated files
 Thumbs.db
 
-# Do not ignore source code in /cmd/
-!/cmd/
-
 porridge_installed_sources.txt
 porridge_sources.txt
+
+# Do not ignore source code in /cmd/
+!/cmd/

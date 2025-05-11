@@ -1,6 +1,6 @@
 # Ignore build output and temp files
-mkusr/
-susie/
+# mkusr/
+# susie/
 node_modules/
 .env
 *.out
