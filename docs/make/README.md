@@ -8,9 +8,21 @@ This guide explains how to build the Gutils utilities, kernel, root filesystem, 
 - Go toolchain (1.22+)
 - GNU Make
 - Kernel build dependencies (gcc, make, etc.)
-- syslinux or xorriso for ISO creation
+- syslinux (isolinux) and xorriso for ISO creation
 
 ---
+
+## Fixing ISO Creation in Fedora.
+
+When building in Fedora, you may find that there's not a "isolinux" package. Here's what to do.
+
+```bash
+sudo dnf install syslinux
+sudo mkdir -p /usr/lib/ISOLINUX/
+sudo ln -s /usr/share/syslinux/isohdpfx.bin /usr/lib/ISOLINUX/isohdpfx.bin
+```
+
+This should fix ISO creation as of Fedora 42.
 
 ## Building Utilities
 To build all utilities:
