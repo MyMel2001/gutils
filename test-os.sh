@@ -4,14 +4,14 @@
 # - 2GB RAM
 # - 16GB disk storage
 # - 2 CPU threads
-# - Using gutils-linux.iso
+# - Using nebula.iso
 
 # Configuration variables
-VM_NAME="gutils-vm"
+VM_NAME="nebula-vm"
 RAM_SIZE="2G"
 DISK_SIZE="16G"
 CPU_THREADS=2
-ISO_FILE="gutils-linux.iso"
+ISO_FILE="nebula.iso"
 DISK_IMG="${VM_NAME}.qcow2"
 
 # Colors for output

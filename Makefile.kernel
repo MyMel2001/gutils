@@ -11,7 +11,7 @@ INITRAMFS = initramfs.cpio.gz
 # Set this to the password you want for dosu (required)
 DOSU_PASS ?=
 
-ISO_IMAGE = gutils-linux.iso
+ISO_IMAGE = nebula.iso
 ISO_DIR = iso
 
 .PHONY: all kernel utils rootfs image clean iso quickreimage

@@ -87,7 +87,8 @@ UTILS = \
 	install-distro \
 	expand-fs \
 	susie \
-	mkusr
+	mkusr \
+	shutdown
 
 # Default target: build all utilities
 all: $(UTILS)
