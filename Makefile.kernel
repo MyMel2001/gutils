@@ -84,11 +84,24 @@ rootfs: utils
 
 # Create an initramfs image
 image: rootfs
+	# Prepare ISO directory structure
+        rm -rf $(ISO_DIR)
+        mkdir -p $(ISO_DIR)/boot/isolinux
+        cp $(KERNEL_DIR)/arch/x86/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp $(KERNEL_DIR)/arch/x86/boot/compressed/vmlinux >
+        cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
+
+        # Generate ISOLINUX config.
+        # Copy isolinux.bin (user must have syslinux installed)
+        cp /usr/lib/ISOLINUX/isolinux.bin $(ISO_DIR)/boot/isolinux/ || cp /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/i>
+        # First, ensure all required SYSLINUX files are in the boot directory
+        mkdir -p $(ISO_DIR)/boot/isolinux/
+        cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
+        cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
+
 	cp -r $(ISO_DIR)/boot $(ROOTFS_DIR)
 	chmod 644 $(ROOTFS_DIR)/boot/isolinux/*
 	chmod +x $(ROOTFS_DIR)/init
 	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
-
 clean:
 	rm -rf $(KERNEL_DIR) $(KERNEL_ARCHIVE) $(ROOTFS_DIR) bin $(INITRAMFS) 
 
@@ -97,18 +110,6 @@ quickclean:
 
 iso: image kernel
 	# Prepare ISO directory structure
-	rm -rf $(ISO_DIR)
-	mkdir -p $(ISO_DIR)/boot/isolinux
-	cp $(KERNEL_DIR)/arch/x86/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp $(KERNEL_DIR)/arch/x86/boot/compressed/vmlinux $(ISO_DIR)/boot/vmlinuz
-	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
-	
-	# Generate ISOLINUX config.
-	# Copy isolinux.bin (user must have syslinux installed)
-	cp /usr/lib/ISOLINUX/isolinux.bin $(ISO_DIR)/boot/isolinux/ || cp /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ || true
-	# First, ensure all required SYSLINUX files are in the boot directory
-	mkdir -p $(ISO_DIR)/boot/isolinux/
-	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
-	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
 
 	# Double check that init script is in ISO directory
