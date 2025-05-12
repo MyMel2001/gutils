@@ -27,7 +27,7 @@ $(KERNEL_DIR): $(KERNEL_ARCHIVE)
 	tar -xf $(KERNEL_ARCHIVE)
 
 kernel: $(KERNEL_DIR)
-	cd $(KERNEL_DIR) && make mrproper && make oldconfig && make bzImage -j4 && make modules -j4
+	cd $(KERNEL_DIR) && make oldconfig && make bzImage -j4 && make modules -j4
 
 # Build all Go utilities using the main Makefile
 utils:
@@ -36,7 +36,6 @@ utils:
 # Create a minimal root filesystem and copy utilities
 rootfs: utils
 	rm -rf $(ROOTFS_DIR)
-	mkdir $(ISO_DIR)
 	mkdir -p $(ROOTFS_DIR)/bin
 	# Copy all built binaries from bin/ to rootfs/bin (no utility list duplication)
 	find bin -type f -executable -exec cp {} $(ROOTFS_DIR)/bin/ \;
@@ -110,7 +109,7 @@ iso: image kernel
 	mkdir -p $(ISO_DIR)/boot/isolinux/
 	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
-	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL linux\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
 
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
