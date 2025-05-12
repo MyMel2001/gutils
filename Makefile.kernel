@@ -109,7 +109,7 @@ iso: image kernel
 	mkdir -p $(ISO_DIR)/boot/isolinux/
 	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
 	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
-	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL linux\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
 
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
