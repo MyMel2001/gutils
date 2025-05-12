@@ -7,8 +7,14 @@ import (
 	"os"
 )
 
-// cat: prints file contents or stdin
+// cat: prints file contents or stdin, or just stdin if piped
 func main() {
+	info, _ := os.Stdin.Stat()
+	if (info.Mode() & os.ModeCharDevice) == 0 {
+		// Data is being piped in, ignore arguments
+		io.Copy(os.Stdout, os.Stdin)
+		return
+	}
 	if len(os.Args) < 2 {
 		copyStream(os.Stdin, os.Stdout)
 		return
@@ -30,4 +36,4 @@ func copyStream(src io.Reader, dst io.Writer) {
 	for scanner.Scan() {
 		dst.Write(append(scanner.Bytes(), '\n'))
 	}
-} 
+}
