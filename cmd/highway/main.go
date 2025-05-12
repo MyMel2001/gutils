@@ -49,6 +49,9 @@ func execScript(f *os.File) {
 	}
 }
 
+// aliasMap stores user-defined aliases
+var aliasMap = make(map[string]string)
+
 // handleBuiltins processes built-in commands, returns true if handled
 func handleBuiltins(line string) bool {
 	if line == "exit" || line == "quit" {
@@ -84,7 +87,52 @@ func handleBuiltins(line string) bool {
 		}
 		return true
 	}
+	// Handle alias built-in
+	if strings.HasPrefix(line, "alias") {
+		handleAlias(line)
+		return true
+	}
 	return false
+}
+
+// handleAlias processes the alias command
+func handleAlias(line string) {
+	args := strings.Fields(line)
+	if len(args) == 1 {
+		// Print all aliases
+		for k, v := range aliasMap {
+			fmt.Printf("alias %s='%s'\n", k, v)
+		}
+		return
+	}
+	for _, arg := range args[1:] {
+		parts := strings.SplitN(arg, "=", 2)
+		if len(parts) == 2 {
+			name := parts[0]
+			val := strings.Trim(parts[1], "'\"")
+			aliasMap[name] = val
+		} else {
+			// Print single alias
+			if val, ok := aliasMap[arg]; ok {
+				fmt.Printf("alias %s='%s'\n", arg, val)
+			} else {
+				fmt.Printf("alias: %s: not found\n", arg)
+			}
+		}
+	}
+}
+
+// expandAlias replaces the first word with its alias if defined
+func expandAlias(line string) string {
+	fields := splitArgs(line)
+	if len(fields) == 0 {
+		return line
+	}
+	if val, ok := aliasMap[fields[0]]; ok {
+		// Replace first word with alias value, append rest
+		return val + " " + strings.Join(fields[1:], " ")
+	}
+	return line
 }
 
 // execLine executes a line as a command (supports |, &&, ;)
@@ -92,6 +140,8 @@ func execLine(line string) {
 	if line == "" {
 		return
 	}
+	// Expand alias before processing
+	line = expandAlias(line)
 	// Handle ;
 	seqCmds := splitByUnescaped(line, ';')
 	for _, seqCmd := range seqCmds {
