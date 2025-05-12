@@ -105,7 +105,6 @@ iso: image kernel
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
 	# Generate ISOLINUX config.
 	cp -r $(ROOTFS_DIR)/boot/* $(ISO_DIR)/boot
-	cp $(ROOTFS_DIR)/init $(ISO_DIR)/
 	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
