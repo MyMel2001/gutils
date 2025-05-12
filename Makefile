@@ -111,7 +111,7 @@ distro:
 		exit 1; \
 	fi
 	$(MAKE) all
-	$(MAKE) -f Makefile.kernel all DOSU_PASS="$(DOSU_PASS)"
+	$(MAKE) -f Makefile.kernel distro DOSU_PASS="$(DOSU_PASS)"
 
 # Build a ready-to-use Linux image with all utilities and custom rootfs
 # Usage: make quickreimage DOSU_PASS=yourpassword	

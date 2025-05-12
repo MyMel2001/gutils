@@ -36,6 +36,7 @@ utils:
 # Create a minimal root filesystem and copy utilities
 rootfs: utils
 	rm -rf $(ROOTFS_DIR)
+	mkdir $(ISO_DIR)
 	mkdir -p $(ROOTFS_DIR)/bin
 	# Copy all built binaries from bin/ to rootfs/bin (no utility list duplication)
 	find bin -type f -executable -exec cp {} $(ROOTFS_DIR)/bin/ \;
