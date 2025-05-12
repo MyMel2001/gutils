@@ -39,9 +39,8 @@ rootfs: utils
 	mkdir -p $(ROOTFS_DIR)/bin
 	# Copy all built binaries from bin/ to rootfs/bin (no utility list duplication)
 	find bin -type f -executable -exec cp {} $(ROOTFS_DIR)/bin/ \;
-	cp -r /lib $(ROOTFS_DIR)/ || true
-	cp -r /lib64 $(ROOTFS_DIR)/ || true
-	cp -r /usr/lib $(ROOTFS_DIR)/ || true
+	cp -a /usr/lib $(ROOTFS_DIR)/lib || true
+	cp -a /usr/lib64 $(ROOTFS_DIR)/lib64 || true
 	# Set up dosu password and permissions
 	@if [ -z "$(DOSU_PASS)" ]; then \
 		echo "ERROR: DOSU_PASS must be set (e.g. make rootfs DOSU_PASS=yourpassword)"; \
@@ -84,8 +83,12 @@ rootfs: utils
 
 # Create an initramfs image
 image: rootfs
-	cp -r $(ISO_DIR)/boot $(ROOTFS_DIR)
-	chmod 644 $(ROOTFS_DIR)/boot/isolinux/*
+	# Prepare isolinux files in rootfs for initramfs
+	mkdir -p $(ROOTFS_DIR)/boot/isolinux
+	cp /usr/lib/ISOLINUX/isolinux.bin $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || \
+	cp -f /usr/share/syslinux/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
+	cp -r $(ISO_DIR)/boot $(ROOTFS_DIR) 2>/dev/null || true
+	chmod 644 $(ROOTFS_DIR)/boot/isolinux/* 2>/dev/null || true
 	chmod +x $(ROOTFS_DIR)/init
 	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
 
@@ -97,27 +100,17 @@ quickclean:
 
 iso: image kernel
 	# Prepare ISO directory structure
-	rm -rf $(ISO_DIR)
 	mkdir -p $(ISO_DIR)/boot/isolinux
 	cp $(KERNEL_DIR)/arch/x86/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp $(KERNEL_DIR)/arch/x86/boot/compressed/vmlinux $(ISO_DIR)/boot/vmlinuz
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
-	
 	# Generate ISOLINUX config.
-	# Copy isolinux.bin (user must have syslinux installed)
-	cp /usr/lib/ISOLINUX/isolinux.bin $(ISO_DIR)/boot/isolinux/ || cp /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ || true
-	# First, ensure all required SYSLINUX files are in the boot directory
-	mkdir -p $(ISO_DIR)/boot/isolinux/
-	cp -f /usr/share/syslinux/isolinux.bin $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
-	cp -f /usr/share/syslinux/*.c32 $(ISO_DIR)/boot/isolinux/ 2>/dev/null || true
+	cp -r $(ROOTFS_DIR)/* $(ISO_DIR)/
 	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
-
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
-
 	# Add proper permissions
 	chmod 644 $(ISO_DIR)/boot/isolinux/*
 	chmod +x $(ISO_DIR)/init
-
 	# Then create the ISO with proper options
 	if command -v xorriso >/dev/null; then \
 	xorriso -as mkisofs \
