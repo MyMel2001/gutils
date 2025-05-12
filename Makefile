@@ -88,7 +88,16 @@ UTILS = \
 	expand-fs \
 	susie \
 	mkusr \
-	shutdown
+	shutdown \
+	rmdir \
+	sed \
+	stty \
+	mknod \
+	od \
+	pr \
+	expr \
+	chgrp \
+	cmp
 
 # Default target: build all utilities
 all: $(UTILS)
