@@ -39,8 +39,8 @@ rootfs: utils
 	mkdir -p $(ROOTFS_DIR)/bin
 	# Copy all built binaries from bin/ to rootfs/bin (no utility list duplication)
 	find bin -type f -executable -exec cp {} $(ROOTFS_DIR)/bin/ \;
-	cp -a /usr/lib $(ROOTFS_DIR)/lib || true
-	cp -a /usr/lib64 $(ROOTFS_DIR)/lib64 || true
+	mkdir $(ROOTFS_DIR)/lib64
+	mkdir $(ROOTFS_DIR)/lib
 	# Set up dosu password and permissions
 	@if [ -z "$(DOSU_PASS)" ]; then \
 		echo "ERROR: DOSU_PASS must be set (e.g. make rootfs DOSU_PASS=yourpassword)"; \
@@ -104,7 +104,8 @@ iso: image kernel
 	cp $(KERNEL_DIR)/arch/x86/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp $(KERNEL_DIR)/arch/x86/boot/compressed/vmlinux $(ISO_DIR)/boot/vmlinuz
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
 	# Generate ISOLINUX config.
-	cp -r $(ROOTFS_DIR)/* $(ISO_DIR)/
+	cp -r $(ROOTFS_DIR)/boot/* $(ISO_DIR)/boot
+	cp $(ROOTFS_DIR)/init $(ISO_DIR)/
 	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
@@ -123,6 +124,7 @@ iso: image kernel
 	-isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
 	-joliet \
 	-rock \
+	-udf \
 	-v $(ISO_DIR); \
 	elif command -v genisoimage >/dev/null; then \
 	genisoimage \
@@ -133,6 +135,7 @@ iso: image kernel
 	-boot-load-size 4 \
 	-boot-info-table \
 	-joliet -rock \
+	-udf \
 	-v $(ISO_DIR) && \
 	isohybrid $(ISO_IMAGE); \
 	else \
