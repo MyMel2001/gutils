@@ -2,7 +2,6 @@
 
 # List of utilities
 UTILS = \
-	alias \
 	base64 \
 	basename \
 	calc \
