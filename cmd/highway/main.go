@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -199,8 +198,13 @@ func execAndChain(cmds []string) {
 
 // execPipeline executes a pipeline of commands separated by |
 func execPipeline(cmds []string) {
-	var commands []*exec.Cmd
-	for _, cmdStr := range cmds {
+	if len(cmds) == 0 {
+		return
+	}
+
+	var input []byte
+
+	for i, cmdStr := range cmds {
 		args := splitArgs(strings.TrimSpace(cmdStr))
 		if len(args) == 0 {
 			continue
@@ -210,34 +214,36 @@ func execPipeline(cmds []string) {
 			fmt.Fprintln(os.Stderr, "highway: command not found:", args[0])
 			return
 		}
-		commands = append(commands, exec.Command(cmdPath, args[1:]...))
-	}
-	if len(commands) == 0 {
-		return
-	}
-	for i := 0; i < len(commands)-1; i++ {
-		outPipe, inPipe := io.Pipe()
-		commands[i].Stdout = inPipe
-		commands[i+1].Stdin = outPipe
-	}
-	commands[0].Stdin = os.Stdin
-	commands[len(commands)-1].Stdout = os.Stdout
-	for _, cmd := range commands {
+		cmd := exec.Command(cmdPath, args[1:]...)
+
+		// For the first command, use os.Stdin. For others, use the previous output.
+		if i == 0 {
+			cmd.Stdin = os.Stdin
+		} else {
+			cmd.Stdin = strings.NewReader(string(input))
+		}
+
+		// For the last command, output to os.Stdout. Otherwise, capture output.
+		if i == len(cmds)-1 {
+			cmd.Stdout = os.Stdout
+		} else {
+			var outBuf strings.Builder
+			cmd.Stdout = &outBuf
+			err = cmd.Run()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err)
+				return
+			}
+			input = []byte(outBuf.String())
+			continue
+		}
+
 		cmd.Stderr = os.Stderr
-	}
-	// Start all but last
-	for i := 0; i < len(commands)-1; i++ {
-		if err := commands[i].Start(); err != nil {
+		err = cmd.Run()
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			return
 		}
-	}
-	// Run last and wait for previous
-	if err := commands[len(commands)-1].Run(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-	}
-	for i := 0; i < len(commands)-1; i++ {
-		commands[i].Wait()
 	}
 }
 
