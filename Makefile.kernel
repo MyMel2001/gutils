@@ -86,7 +86,7 @@ image: rootfs
 	# Prepare isolinux files in rootfs for initramfs
 	mkdir -p $(ROOTFS_DIR)/boot/isolinux
 	cp /usr/lib/ISOLINUX/isolinux.bin $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || \
-	cp -f  /usr/lib/ISOLINUX/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
+	cp -r /usr/lib/ISOLINUX/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
 	cp -r $(ISO_DIR)/boot $(ROOTFS_DIR) 2>/dev/null || true
 	chmod 644 $(ROOTFS_DIR)/boot/isolinux/* 2>/dev/null || true
 	chmod +x $(ROOTFS_DIR)/init
