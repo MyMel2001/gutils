@@ -8,6 +8,9 @@ KERNEL_DIR = linux-$(KERNEL_VERSION)
 ROOTFS_DIR = rootfs
 INITRAMFS = initramfs.cpio.gz
 
+ARCH=x86_64
+CROSS_COMPILE=x86_64-linux-gnu- # comment me out if not using arm!
+
 # Set this to the password you want for dosu (required)
 DOSU_PASS ?=
 
