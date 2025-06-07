@@ -1,7 +1,7 @@
 # Makefile for Gutils
 
-GOARCH = arm64
-GOOS = linux
+GOARCH ?= arm64
+GOOS ?= linux
 
 # List of utilities
 UTILS = \

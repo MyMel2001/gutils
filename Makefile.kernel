@@ -1,8 +1,9 @@
 # Makefile.kernel: Build a minimal Linux distro with custom Go utilities
 
-KERNEL_VERSION = 6.14.6
+ARCH ?= arm64 # feel free to set this via the cli depending on your setup
+KERNEL_VERSION ?= 6.8 # same for this
 KERNEL_URL = https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$(KERNEL_VERSION).tar.xz
-BUSYBOX_URL = https://www.busybox.net/downloads/binaries/1.21.1/busybox-x86_64
+BUSYBOX_URL = https://www.busybox.net/downloads/binaries/1.21.1/busybox-$(ARCH)
 KERNEL_ARCHIVE = linux-$(KERNEL_VERSION).tar.xz
 KERNEL_DIR = linux-$(KERNEL_VERSION)
 ROOTFS_DIR = rootfs
@@ -28,7 +29,7 @@ $(KERNEL_DIR): $(KERNEL_ARCHIVE)
 	tar -xf "$(KERNEL_ARCHIVE)"
 
 kernel: $(KERNEL_DIR)
-	cd $(KERNEL_DIR) && make mrproper && make defconfig && make bzImage -j4 && make modules -j4
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig && sleep 5 && make bzImage -j2 && make modules -j2 || make ARCH=$(ARCH) Image -j2
 
 # Build all Go utilities using the main Makefile
 utils:
@@ -102,7 +103,7 @@ quickclean:
 iso: image kernel
 	# Prepare ISO directory structure
 	mkdir -p $(ISO_DIR)/boot/isolinux
-	cp $(KERNEL_DIR)/arch/x86/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp $(KERNEL_DIR)/arch/x86/boot/compressed/vmlinux $(ISO_DIR)/boot/vmlinuz
+	cp -r "$(KERNEL_DIR)/arch/$(ARCH)/boot/*" "$(ISO_DIR)/boot/vmlinuz" || cp -r "$(KERNEL_DIR)/arch/$(ARCH)/boot/compressed/*" "$(ISO_DIR)/boot/vmlinuz"
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
 	# Generate ISOLINUX config.
 	cp -r $(ROOTFS_DIR)/boot/* $(ISO_DIR)/boot
