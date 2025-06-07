@@ -23,6 +23,29 @@ sudo ln -s /usr/share/syslinux /usr/lib/ISOLINUX
 
 This should fix ISO creation as of Fedora 42.
 
+## To Install Dependencies using APT (as of Ubuntu 24.04)
+
+```bash
+sudo apt update && sudo apt install -y \
+  build-essential \
+  bc \
+  bison \
+  flex \
+  libssl-dev \
+  libelf-dev \
+  libncurses-dev \
+  grub-efi-arm64-bin \
+  grub-mkrescue \
+  xorriso \
+  mtools \
+  qemu-system-aarch64 \
+  qemu-efi-aarch64 \
+  busybox-static \
+  golang \
+  make \
+  cmake
+```
+
 ## Building Utilities
 To build all utilities:
 ```
