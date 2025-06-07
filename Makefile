@@ -1,5 +1,8 @@
 # Makefile for Gutils
 
+GOARCH ?=
+GOOS=linux
+
 # List of utilities
 UTILS = \
 	base64 \
