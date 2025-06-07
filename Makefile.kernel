@@ -24,10 +24,10 @@ $(KERNEL_ARCHIVE):
 	wget -c $(KERNEL_URL)
 
 $(KERNEL_DIR): $(KERNEL_ARCHIVE)
-	tar -xf $(KERNEL_ARCHIVE)
+	tar -xf "$(KERNEL_ARCHIVE)"
 
 kernel: $(KERNEL_DIR)
-	cd $(KERNEL_DIR) && make menuconfig && make bzImage -j4 && make modules -j4
+	cd $(KERNEL_DIR) && make defconfig && make bzImage -j4 && make modules -j4
 
 # Build all Go utilities using the main Makefile
 utils:
