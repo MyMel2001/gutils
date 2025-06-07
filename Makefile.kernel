@@ -1,9 +1,9 @@
 # Makefile.kernel: Build a minimal Linux distro with custom Go utilities
 
-ARCH ?= arm64 # feel free to set this via the cli depending on your setup
-KERNEL_VERSION ?= 6.8 # same for this
-KERNEL_URL = https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$(KERNEL_VERSION).tar.xz
-BUSYBOX_URL = https://www.busybox.net/downloads/binaries/1.21.1/busybox-$(ARCH)
+ARCH ?= arm64
+KERNEL_VERSION ?= 6.8
+KERNEL_URL = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$(KERNEL_VERSION).tar.xz"
+# BUSYBOX_URL = https://www.busybox.net/downloads/binaries/1.21.1/busybox-$(ARCH) # very nice busybox, thanks for making us use the package manager! (bloat eww)
 KERNEL_ARCHIVE = linux-$(KERNEL_VERSION).tar.xz
 KERNEL_DIR = linux-$(KERNEL_VERSION)
 ROOTFS_DIR = rootfs
@@ -58,8 +58,8 @@ rootfs: utils
 	mkdir $(ROOTFS_DIR)/root
 
 
-	# Prep emergency shell
-	wget -O $(ROOTFS_DIR)/bin/sh $(BUSYBOX_URL)
+	# Prep emergency shell (wow good job)
+	cp /usr/bin/busybox $(ROOTFS_DIR)/bin/sh
 	chmod +x $(ROOTFS_DIR)/bin/sh
 
 	# Create init script
@@ -85,12 +85,15 @@ rootfs: utils
 
 # Create an initramfs image
 image: rootfs
-	# Prepare isolinux files in rootfs for initramfs
-	mkdir -p $(ROOTFS_DIR)/boot/isolinux
-	cp /usr/lib/ISOLINUX/isolinux.bin $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
-	cp /usr/lib/ISOLINUX/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
+	# Prepare GRUB files in rootfs for initramfs
+	# mkdir -p $(ROOTFS_DIR)/boot/grub
+	#cp /usr/lib/ISOLINUX/isolinux.bin $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
+	#cp /usr/lib/ISOLINUX/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
+	mkdir -p $(ROOTFS_DIR)/boot/efi/efi/BOOT
+	cp -r /boot/grub $(ROOTFS_DIR)/boot/grub
+	cp -r /boot/efi/EFI/BOOT/* $(ROOTFS_DIR)/boot/efi/efi/BOOT
 	cp -r $(ISO_DIR)/boot $(ROOTFS_DIR) 2>/dev/null || true
-	chmod 644 $(ROOTFS_DIR)/boot/isolinux/* 2>/dev/null || true
+	chmod 644 $(ROOTFS_DIR)/boot/grub/* 2>/dev/null || true
 	chmod +x $(ROOTFS_DIR)/init
 	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
 
@@ -102,42 +105,22 @@ quickclean:
 
 iso: image kernel
 	# Prepare ISO directory structure
-	mkdir -p $(ISO_DIR)/boot/isolinux
-	cp -r "$(KERNEL_DIR)/arch/$(ARCH)/boot/*" "$(ISO_DIR)/boot/vmlinuz" || cp -r "$(KERNEL_DIR)/arch/$(ARCH)/boot/compressed/*" "$(ISO_DIR)/boot/vmlinuz"
+	# mkdir -p $(ISO_DIR)/boot/isolinux # no more support for ISOLINUX!
+	cp -r $(KERNEL_DIR)/arch/$(ARCH)/boot/Image $(ISO_DIR)/boot/vmlinuz || cp -r $(KERNEL_DIR)/arch/$(ARCH)/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp -r "$(KERNEL_DIR)/arch/$(ARCH)/boot/compressed/*" "$(ISO_DIR)/boot/vmlinuz"
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
-	# Generate ISOLINUX config.
+	# Generate GRUB config.
 	cp -r $(ROOTFS_DIR)/boot/* $(ISO_DIR)/boot
-	printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init\n" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	# printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init\n" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
+	cp -r /boot/grub $(ISO_DIR)/boot/grub
+	printf 'set default=0\nset timeout=5\n\nmenuentry "NebuLa" { /boot/* console=ttyAMA0\n\tinitrd /boot/initramfs.cpio.gz \n}\n' > $(ISO_DIR)/boot/grub/grub.cfg
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
 	# Add proper permissions
-	chmod 644 $(ISO_DIR)/boot/isolinux/*
+	chmod 644 $(ISO_DIR)/boot/efi/efi
 	chmod +x $(ISO_DIR)/init
+	rm -rf $(ISO_DIR)/efi || echo No EFI folder - moving on
+	mkdir $(ISO_DIR)/efi
+	cp -r /boot/efi/efi/* $(ISO_DIR)/efi
+	cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/efi/ubuntu
 	# Then create the ISO with proper options
-	if command -v xorriso >/dev/null; then \
-	xorriso -as mkisofs \
-	-o $(ISO_IMAGE) \
-	-b boot/isolinux/isolinux.bin \
-	-c boot/isolinux/boot.cat \
-	-no-emul-boot \
-	-boot-load-size 4 \
-	-boot-info-table \
-	-isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
-	-joliet \
-	-rock \
-	-v $(ISO_DIR); \
-	elif command -v genisoimage >/dev/null; then \
-	genisoimage \
-	-o $(ISO_IMAGE) \
-	-b boot/isolinux/isolinux.bin \
-	-c boot/isolinux/boot.cat \
-	-no-emul-boot \
-	-boot-load-size 4 \
-	-boot-info-table \
-	-joliet -rock \
-	-udf \
-	-v $(ISO_DIR) && \
-	isohybrid $(ISO_IMAGE); \
-	else \
-		echo 'No ISO creation tool found (xorriso or genisoimage required)'; exit 1; \
-	fi 
+	grub-mkrescue -o $(ISO_IMAGE) iso/ --modules="linux normal efi_gop part_gpt" --directory="/usr/lib/grub/$(ARCH)-efi"
