@@ -86,6 +86,7 @@ rootfs: utils
 # Create an initramfs image
 image: rootfs
 	# Prepare GRUB files in rootfs for initramfs
+	- sudo ln -s /boot/grub2 /boot/grub
 	# mkdir -p $(ROOTFS_DIR)/boot/grub
 	#cp /usr/lib/ISOLINUX/isolinux.bin $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
 	#cp /usr/lib/ISOLINUX/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
@@ -106,6 +107,7 @@ quickclean:
 iso: image kernel
 	# Prepare ISO directory structure
 	# mkdir -p $(ISO_DIR)/boot/isolinux # no more support for ISOLINUX!
+	- sudo ln -s /boot/grub2 /boot/grub
 	cp -r $(KERNEL_DIR)/arch/$(ARCH)/boot/Image $(ISO_DIR)/boot/vmlinuz || cp -r $(KERNEL_DIR)/arch/$(ARCH)/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp -r "$(KERNEL_DIR)/arch/$(ARCH)/boot/compressed/*" "$(ISO_DIR)/boot/vmlinuz"
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
 	# Generate GRUB config.
@@ -125,5 +127,5 @@ iso: image kernel
 	- rm $(ISO_DIR)/EFI/ubuntu/grub.cfg
 	- cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/EFI/ubuntu
 	- cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/EFI/fedora
-	# Then create the ISO with proper options
+	#boot/grub Then create the ISO with proper options
 	grub-mkrescue -o $(ISO_IMAGE) iso/ --modules="linux normal efi_gop part_gpt" --directory="/usr/lib/grub/$(ARCH)-efi"
