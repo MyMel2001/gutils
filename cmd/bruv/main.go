@@ -58,8 +58,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "bruv: %s\n", err)
 			os.Exit(1)
 		}
+	case "help":
+		cmdHelp()
 	default:
 		fmt.Fprintf(os.Stderr, "bruv: unknown command: %s\n", command)
+		cmdHelp()
 		os.Exit(1)
 	}
 }
