@@ -12,15 +12,6 @@ This guide explains how to build the Gutils utilities, kernel, root filesystem, 
 
 ---
 
-## Fixing ISO Creation in Fedora.
-
-When building in Fedora, you may find that there's not a "isolinux" package. Here's what to do.
-
-```bash
-sudo dnf install syslinux
-sudo ln -s /usr/share/syslinux /usr/lib/ISOLINUX
-```
-
 This should fix ISO creation as of Fedora 42.
 
 ## To Install Dependencies using APT (as of Ubuntu 24.04)
