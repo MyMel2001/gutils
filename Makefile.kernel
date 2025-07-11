@@ -89,9 +89,9 @@ image: rootfs
 	# mkdir -p $(ROOTFS_DIR)/boot/grub
 	#cp /usr/lib/ISOLINUX/isolinux.bin $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
 	#cp /usr/lib/ISOLINUX/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
-	mkdir -p $(ROOTFS_DIR)/boot/efi/efi/BOOT
+	mkdir -p $(ROOTFS_DIR)/boot/efi/EFI/BOOT
 	cp -r /boot/grub $(ROOTFS_DIR)/boot/grub
-	cp -r /boot/efi/EFI/BOOT/* $(ROOTFS_DIR)/boot/efi/efi/BOOT
+	cp -r /boot/efi/EFI/BOOT/* $(ROOTFS_DIR)/boot/efi/EFI/BOOT
 	cp -r $(ISO_DIR)/boot $(ROOTFS_DIR) 2>/dev/null || true
 	chmod 644 $(ROOTFS_DIR)/boot/grub/* 2>/dev/null || true
 	chmod +x $(ROOTFS_DIR)/init
@@ -116,11 +116,14 @@ iso: image kernel
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
 	# Add proper permissions
-	chmod 644 $(ISO_DIR)/boot/efi/efi
+	chmod 644 $(ISO_DIR)/boot/efi/EFI
 	chmod +x $(ISO_DIR)/init
-	rm -rf $(ISO_DIR)/efi || echo No EFI folder - moving on
-	mkdir $(ISO_DIR)/efi
-	cp -r /boot/efi/efi/* $(ISO_DIR)/efi
-	cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/efi/ubuntu
+	rm -rf $(ISO_DIR)/EFI || echo No EFI folder - moving on
+	mkdir $(ISO_DIR)/EFI
+	cp -r /boot/efi/efi/* $(ISO_DIR)/EFI
+	- rm $(ISO_DIR)/EFI/fedora/grub.cfg
+	- rm $(ISO_DIR)/EFI/ubuntu/grub.cfg
+	- cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/EFI/ubuntu
+	- cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/EFI/fedora
 	# Then create the ISO with proper options
 	grub-mkrescue -o $(ISO_IMAGE) iso/ --modules="linux normal efi_gop part_gpt" --directory="/usr/lib/grub/$(ARCH)-efi"
