@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"net/url"
 )
 
 func main() {
@@ -74,17 +75,19 @@ func cmdClone(args []string) error {
 	url := args[0]
 	dir := args[1]
 
-	// very basic url parsing
-	parts := strings.Split(url, ":")
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid url format")
+	parsedURL, err := url.Parse(url)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
 	}
-	host := parts[0]
-	repoPath := parts[1]
+	host := parsedURL.Host
+	if host == "" {
+		host = parsedURL.Path
+	}
+	repoPath := strings.TrimPrefix(parsedURL.Path, "/")
 
 	conn, err := net.Dial("tcp", host+":9418")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to %s:9418: %w", host, err)
 	}
 	defer conn.Close()
 
@@ -94,7 +97,10 @@ func cmdClone(args []string) error {
 	reader := bufio.NewReader(conn)
 	refLine, err := reader.ReadString('\n')
 	if err != nil {
-		return fmt.Errorf("could not read ref: %w", err)
+		return fmt.Errorf("failed to read ref from server: %w", err)
+	}
+	if refLine == "" {
+		return fmt.Errorf("empty ref line received from server")
 	}
 	fmt.Print(refLine) // "d350900... refs/heads/main"
 
@@ -120,9 +126,12 @@ func cmdClone(args []string) error {
 	}
 	defer packfile.Close()
 
-	_, err = io.Copy(packfile, reader)
+	n, err := io.Copy(packfile, reader)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to copy packfile data: %w", err)
+	}
+	if n == 0 {
+		return fmt.Errorf("no data received for packfile")
 	}
 
 	fmt.Printf("Clone complete. Packfile saved to %s\n", packfilePath)
