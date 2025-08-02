@@ -58,8 +58,8 @@ rootfs: utils
 	mkdir $(ROOTFS_DIR)/root
 
 
-	# Prep emergency shell (wow good job)
-	cp /usr/bin/busybox $(ROOTFS_DIR)/bin/sh
+	# Prep emergency shell using built BusyBox
+	cp "$(BUSYBOX_DIR)/busybox" $(ROOTFS_DIR)/bin/sh
 	chmod +x $(ROOTFS_DIR)/bin/sh
 
 	# Create init script
@@ -86,14 +86,8 @@ rootfs: utils
 # Create an initramfs image
 image: rootfs
 	# Prepare GRUB files in rootfs for initramfs
-	- sudo ln -s /boot/grub2 /boot/grub
-	# mkdir -p $(ROOTFS_DIR)/boot/grub
-	#cp /usr/lib/ISOLINUX/isolinux.bin $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
-	#cp /usr/lib/ISOLINUX/*.c32 $(ROOTFS_DIR)/boot/isolinux/ 2>/dev/null || true
 	mkdir -p $(ROOTFS_DIR)/boot/efi/EFI/BOOT
-	cp -r /boot/grub $(ROOTFS_DIR)/boot/grub
-	cp -r /boot/efi/EFI/BOOT/* $(ROOTFS_DIR)/boot/efi/EFI/BOOT
-	cp -r $(ISO_DIR)/boot $(ROOTFS_DIR) 2>/dev/null || true
+		cp -r $(ISO_DIR)/boot $(ROOTFS_DIR) 2>/dev/null || true
 	chmod 644 $(ROOTFS_DIR)/boot/grub/* 2>/dev/null || true
 	chmod +x $(ROOTFS_DIR)/init
 	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
@@ -106,15 +100,14 @@ quickclean:
 
 iso: image kernel
 	# Prepare ISO directory structure
-	# mkdir -p $(ISO_DIR)/boot/isolinux # no more support for ISOLINUX!
-	- sudo ln -s /boot/grub2 /boot/grub
+	mkdir -p $(ISO_DIR)/boot/grub
 	cp -r $(KERNEL_DIR)/arch/$(ARCH)/boot/Image $(ISO_DIR)/boot/vmlinuz || cp -r $(KERNEL_DIR)/arch/$(ARCH)/boot/bzImage $(ISO_DIR)/boot/vmlinuz || cp -r "$(KERNEL_DIR)/arch/$(ARCH)/boot/compressed/*" "$(ISO_DIR)/boot/vmlinuz"
 	cp $(INITRAMFS) $(ISO_DIR)/boot/initramfs.cpio.gz
 	# Generate GRUB config.
 	cp -r $(ROOTFS_DIR)/boot/* $(ISO_DIR)/boot
 	# printf "UI menu.c32\nPROMPT 0\nTIMEOUT 50\nDEFAULT 50\nLABEL NebuLa\n  KERNEL /boot/vmlinuz\n  INITRD /boot/initramfs.cpio.gz\n  APPEND init=/init\n" > $(ISO_DIR)/boot/isolinux/isolinux.cfg
 	cp -r /boot/grub $(ISO_DIR)/boot/grub
-	printf 'set default=0\nset timeout=5\n\nmenuentry "NebuLa" { /boot/* console=ttyAMA0\n\tinitrd /boot/initramfs.cpio.gz \n}\n' > $(ISO_DIR)/boot/grub/grub.cfg
+	printf 'set default=0\nset timeout=5\n\nmenuentry "NebuLa" { linux /boot/vmlinuz console=ttyAMA0\n\tinitrd /boot/initramfs.cpio.gz \n}\n' > $(ISO_DIR)/boot/grub/grub.cfg
 	# Double check that init script is in ISO directory
 	cp $(ROOTFS_DIR)/init $(ISO_DIR)/init 
 	# Add proper permissions
@@ -122,7 +115,10 @@ iso: image kernel
 	chmod +x $(ISO_DIR)/init
 	rm -rf $(ISO_DIR)/EFI || echo No EFI folder - moving on
 	mkdir $(ISO_DIR)/EFI
-	cp -r /boot/efi/efi/* $(ISO_DIR)/EFI
+	# Remove dependency on host's EFI files
+	mkdir -p $(ISO_DIR)/EFI/BOOT
+	# Assuming grubx64.efi is built or copied elsewhere
+	cp $(KERNEL_DIR)/arch/$(ARCH)/boot/EFI/BOOT/grubx64.efi $(ISO_DIR)/EFI/BOOT/
 	- rm $(ISO_DIR)/EFI/fedora/grub.cfg
 	- rm $(ISO_DIR)/EFI/ubuntu/grub.cfg
 	- cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/EFI/ubuntu
