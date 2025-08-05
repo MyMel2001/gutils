@@ -43,8 +43,7 @@ kernel: $(KERNEL_DIR)
 		cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig || exit 1; \
 	fi
 	# Use CFLAGS to suppress new warnings from GCC 15
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS="-Wno-unterminated-string-initialization" CFLAGS="-Wno-unterminated-string-initialization"
-
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS="-std=gnu11 -Wno-unterminated-string-initialization" CFLAGS="-std=gnu11 -Wno-unterminated-string-initialization"
 # Build all Go utilities using the main Makefile
 utils:
 	@echo "--- Building Go utilities ---"
