@@ -39,43 +39,15 @@ sudo apt update && sudo apt install -y \
 
 In Fedora:
 
-Download gcc-13 source and run:
-
 ```
-./contrib/download_prerequisites
-mkdir build && cd build
-../configure --prefix=/usr/local/gcc-13 --enable-languages=c,c++ --disable-multilib
-make -j$(nproc)
-sudo make install
+sudo dnf install -y podman distrobox
+distrobox create --name gutils-devel --image ubuntu:24.04
 ```
-
+then
 ```
-sudo dnf install fedpkg
-fedpkg clone -a kernel
-cd kernel
-sudo dnf builddep kernel.spec
+distrobox enter gutils-devel
 ```
-
-```
-sudo dnf install -y --skip-unavailable  \
-  @development-tools openssl-devel-engine \
-  bc openssl-devel \
-  bison \
-  flex kernel-cross-headers \
-  openssl-devel kernel-headers syslinux-devel \
-  elfutils-libelf-devel \
-  ncurses-devel \
-  grub2-tools \
-  grub2-efi-amd64 \
-  xorriso \
-  mtools \
-  qemu-system-amd64 \
-  qemu-efi-amd64 \
-  busybox \
-  golang \
-  cmake
-```
-(Replace "amd64" with your architecure.)
+and follow Ubuntu instructions.
 
 ## Building Utilities
 To build all utilities:
