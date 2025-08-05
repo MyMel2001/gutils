@@ -41,8 +41,8 @@ In Fedora:
 
 ```
 sudo dnf install -y --skip-unavailable  \
-  @development-tools \
-  bc \
+  @development-tools openssl-devel-engine \
+  bc openssl-devel \
   bison \
   flex \
   openssl-devel \
