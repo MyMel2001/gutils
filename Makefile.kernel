@@ -7,11 +7,13 @@ KERNEL_ARCHIVE = linux-$(KERNEL_VERSION).tar.xz
 KERNEL_DIR = linux-$(KERNEL_VERSION)
 ROOTFS_DIR = rootfs
 INITRAMFS = initramfs.cpio.gz
-BUSYBOX_DIR ?= /usr/bin/
+
+# Directories for host system files - Be cautious with these!
 GCC_DIR ?= /usr/bin/
 MAKE_DIR ?= /usr/bin/
 LIBS_DIR ?= /lib/
 H_DIR=/usr/include/
+
 # Set this to the password you want for dosu (required)
 DOSU_PASS ?=
 
@@ -39,9 +41,8 @@ kernel: $(KERNEL_DIR)
 		echo "Creating default configuration..."; \
 		cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig || exit 1; \
 	fi
-	# We are now using a newer kernel (6.14) which is likely compatible with GCC 15,
-	# so we can remove the custom CFLAGS and patch steps.
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) -Werror=unterminated-string-initialization
+	# Use -Wno- to suppress the specific warning.
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS=-Wno-unterminated-string-initialization CFLAGS=-Wno-unterminated-string-initialization
 
 # Build all Go utilities using the main Makefile
 utils:
@@ -76,10 +77,16 @@ rootfs: utils
 	
 	# Prep emergency shell using built BusyBox
 	cp "$(BUSYBOX_DIR)/busybox" "$(ROOTFS_DIR)/bin/sh"
+	# WARNING: The following lines are highly problematic for a minimal distro
+	# It is copying host system's GCC, Make, libraries, and headers
+	# This will create a very large image and may not work due to path issues
 	cp "$(GCC_DIR)/gcc" "$(ROOTFS_DIR)/bin/gcc"
 	cp "$(MAKE_DIR)/make" "$(ROOTFS_DIR)/bin/make"
-	cp -r $(LIBS_DIR)/*  "$(ROOTFS_DIR)/$(LIBS_DIR)" 
-	cp -r $(H_DIR)/*  "$(ROOTFS_DIR)/$(H_DIR)" 
+	mkdir -p "$(ROOTFS_DIR)/$(LIBS_DIR)"
+	cp -r $(LIBS_DIR)/* "$(ROOTFS_DIR)/$(LIBS_DIR)"
+	mkdir -p "$(ROOTFS_DIR)/$(H_DIR)"
+	cp -r $(H_DIR)/* "$(ROOTFS_DIR)/$(H_DIR)"
+	
 	chmod +x $(ROOTFS_DIR)/bin/sh
 	chmod +x $(ROOTFS_DIR)/bin/gcc
 	chmod +x $(ROOTFS_DIR)/bin/make
