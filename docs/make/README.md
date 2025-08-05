@@ -24,11 +24,8 @@ sudo apt update && sudo apt install -y \
   libelf-dev \
   libncurses-dev \
   grub-efi-amd64-bin \
-  grub-mkrescue \
   xorriso \
   mtools \
-  qemu-system-amd64 \
-  qemu-efi-amd64 \
   busybox-static \
   golang \
   make \
