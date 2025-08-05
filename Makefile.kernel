@@ -41,7 +41,8 @@ kernel: $(KERNEL_DIR)
 		echo "Creating default configuration..."; \
 		cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig || exit 1; \
 	fi
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc)
+	# Re-introducing the flag to suppress the new warning from GCC 15
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS=-Wno-unterminated-string-initialization CFLAGS=-Wno-unterminated-string-initialization
 
 # Build all Go utilities using the main Makefile
 utils:
