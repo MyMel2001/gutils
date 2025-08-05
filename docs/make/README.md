@@ -12,8 +12,6 @@ This guide explains how to build the Gutils utilities, kernel, root filesystem, 
 
 ---
 
-This should fix ISO creation as of Fedora 42.
-
 ## To Install Dependencies using APT (as of Ubuntu 24.04/Fedora 42)
 
 ```bash
