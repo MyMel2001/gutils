@@ -44,7 +44,7 @@ sudo dnf install -y --skip-unavailable  \
   @development-tools openssl-devel-engine \
   bc openssl-devel \
   bison \
-  flex \
+  flex kernel-cross-headers \
   openssl-devel kernel-headers syslinux-devel \
   elfutils-libelf-devel \
   ncurses-devel \
