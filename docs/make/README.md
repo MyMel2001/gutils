@@ -14,7 +14,7 @@ This guide explains how to build the Gutils utilities, kernel, root filesystem, 
 
 This should fix ISO creation as of Fedora 42.
 
-## To Install Dependencies using APT (as of Ubuntu 24.04)
+## To Install Dependencies using APT (as of Ubuntu 24.04/Fedora 42)
 
 ```bash
 sudo apt update && sudo apt install -y \
@@ -25,17 +25,40 @@ sudo apt update && sudo apt install -y \
   libssl-dev \
   libelf-dev \
   libncurses-dev \
-  grub-efi-arm64-bin \
+  grub-efi-amd64-bin \
   grub-mkrescue \
   xorriso \
   mtools \
-  qemu-system-aarch64 \
-  qemu-efi-aarch64 \
+  qemu-system-amd64 \
+  qemu-efi-amd64 \
   busybox-static \
   golang \
   make \
   cmake
 ```
+
+In Fedora:
+
+```
+sudo dnf install -y --skip-unavailable  \
+  @development-tools \
+  bc \
+  bison \
+  flex \
+  openssl-devel \
+  elfutils-libelf-devel \
+  ncurses-devel \
+  grub2-tools \
+  grub2-efi-amd64 \
+  xorriso \
+  mtools \
+  qemu-system-amd64 \
+  qemu-efi-amd64 \
+  busybox \
+  golang \
+  cmake
+```
+(Replace "amd64" with your architecure.)
 
 ## Building Utilities
 To build all utilities:
