@@ -40,6 +40,13 @@ sudo apt update && sudo apt install -y \
 In Fedora:
 
 ```
+sudo dnf install fedpkg
+fedpkg clone -a kernel
+cd kernel
+sudo dnf builddep kernel.spec
+```
+
+```
 sudo dnf install -y --skip-unavailable  \
   @development-tools openssl-devel-engine \
   bc openssl-devel \
