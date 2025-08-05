@@ -1,6 +1,6 @@
 # Makefile.kernel: Build a minimal Linux distro with custom Go utilities
 
-ARCH ?= arm64
+ARCH ?= x86_64
 KERNEL_VERSION ?= 6.8
 KERNEL_URL = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$(KERNEL_VERSION).tar.xz"
 # BUSYBOX_URL = https://www.busybox.net/downloads/binaries/1.21.1/busybox-$(ARCH) # very nice busybox, thanks for making us use the package manager! (bloat eww)
