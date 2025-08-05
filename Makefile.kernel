@@ -38,12 +38,17 @@ KERNEL_IMAGE_NAME = $(if $(filter x86_64,$(ARCH)),bzImage,Image)
 
 kernel: $(KERNEL_DIR)
 	@echo "--- Compiling the kernel for $(ARCH) ---"
-	@if ! [ -f "$(KERNEL_DIR)/.config" ]; then \
-		echo "Creating default configuration..."; \
-		cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig || exit 1; \
-	fi
-	# Use CFLAGS to suppress new warnings from GCC 15
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS="-std=gnu11 -fcf-protection -Wno-unterminated-string-initialization" CFLAGS="-std=gnu11 -fcf-protection -Wno-unterminated-string-initialization"
+	# Always start with a clean state to prevent stale files from causing issues
+	@cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) mrproper
+	
+	# Create a default configuration if it doesn't exist
+	@cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig
+	
+	# Compile the kernel using GCC 12 and required flags
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) \
+		CC=gcc-12 \
+		KBUILD_CFLAGS="-std=gnu11 -fcf-protection -Wno-unterminated-string-initialization" \
+		CFLAGS="-std=gnu11 -fcf-protection -Wno-unterminated-string-initialization"
 # Build all Go utilities using the main Makefile
 utils:
 	@echo "--- Building Go utilities ---"
