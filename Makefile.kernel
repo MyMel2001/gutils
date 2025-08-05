@@ -41,8 +41,7 @@ kernel: $(KERNEL_DIR)
 		echo "Creating default configuration..."; \
 		cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig || exit 1; \
 	fi
-	# Use -Wno- to suppress the specific warning.
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS=-Wno-unterminated-string-initialization CFLAGS=-Wno-unterminated-string-initialization
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc)
 
 # Build all Go utilities using the main Makefile
 utils:
@@ -77,9 +76,6 @@ rootfs: utils
 	
 	# Prep emergency shell using built BusyBox
 	cp "$(BUSYBOX_DIR)/busybox" "$(ROOTFS_DIR)/bin/sh"
-	# WARNING: The following lines are highly problematic for a minimal distro
-	# It is copying host system's GCC, Make, libraries, and headers
-	# This will create a very large image and may not work due to path issues
 	cp "$(GCC_DIR)/gcc" "$(ROOTFS_DIR)/bin/gcc"
 	cp "$(MAKE_DIR)/make" "$(ROOTFS_DIR)/bin/make"
 	mkdir -p "$(ROOTFS_DIR)/$(LIBS_DIR)"
@@ -112,6 +108,8 @@ image: rootfs
 
 clean:
 	@echo "--- Cleaning project ---"
+	# Use make mrproper for a thorough cleanup of the kernel source tree
+	-cd "$(KERNEL_DIR)" && make mrproper
 	rm -rf $(KERNEL_DIR) $(KERNEL_ARCHIVE) $(ROOTFS_DIR) bin $(INITRAMFS) $(ISO_DIR) $(ISO_IMAGE)
 
 quickclean:
