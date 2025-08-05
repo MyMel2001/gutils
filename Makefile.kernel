@@ -47,7 +47,7 @@ kernel: $(KERNEL_DIR)
 	# Compile the kernel using GCC 12 and required flags
 	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) \
 		CC=gcc \
-		KBUILD_CFLAGS="-std=gnu11 -fcf-protection -Wno-unterminated-string-initialization"
+		KBUILD_CFLAGS="-std=gnu11 -Wno-unterminated-string-initialization"
 
 # Build all Go utilities using the main Makefile
 utils:
