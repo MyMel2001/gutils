@@ -45,7 +45,7 @@ sudo dnf install -y --skip-unavailable  \
   bc openssl-devel \
   bison \
   flex \
-  openssl-devel \
+  openssl-devel kernel-headers syslinux-devel \
   elfutils-libelf-devel \
   ncurses-devel \
   grub2-tools \
