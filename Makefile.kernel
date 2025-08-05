@@ -15,8 +15,9 @@ DOSU_PASS ?=
 ISO_IMAGE = nebula.iso
 ISO_DIR = iso
 
-# Define standard compiler flags to fix the C23 issue
-export CFLAGS := -std=gnu11
+# Override kernel CFLAGS to force a pre-C23 standard.
+# This is a more robust way to handle the new GCC default.
+export KBUILD_CFLAGS := -std=gnu11
 
 .PHONY: all kernel utils rootfs image clean iso quickreimage
 
@@ -40,6 +41,7 @@ kernel: $(KERNEL_DIR)
 		cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig || exit 1; \
 	fi
 	# Use the explicit variable passing for `make` and build the correct image type
+	# The KBUILD_CFLAGS export at the top should now be correctly applied.
 	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) -j$(shell nproc) && make ARCH=$(ARCH) modules -j$(shell nproc)
 
 # Build all Go utilities using the main Makefile
