@@ -29,7 +29,11 @@ sudo apt update && sudo apt install -y \
   busybox-static \
   golang \
   make \
-  cmake
+  cmake gcc-12
+```
+then
+```
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
 ```
 
 In Fedora:
