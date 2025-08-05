@@ -36,9 +36,8 @@ kernel: $(KERNEL_DIR)
 		echo "Creating default configuration..."; \
 		cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig || exit 1; \
 	fi
-	# Force the C standard to gnu11 for all parts of the build.
-	# The use of the 'all' target is more robust and comprehensive.
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS=-std=gnu11 CFLAGS=-std=gnu11
+	# Force the C standard to gnu11 and suppress the attribute warning
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) KBUILD_CFLAGS="-std=gnu11 -Wno-attributes" CFLAGS="-std=gnu11 -Wno-attributes"
 
 # Build all Go utilities using the main Makefile
 utils:
