@@ -38,7 +38,7 @@ kernel: $(KERNEL_DIR)
 	fi
 	# We are now using a newer kernel (6.14) which is likely compatible with GCC 15,
 	# so we can remove the custom CFLAGS and patch steps.
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc)
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) -Werror
 
 # Build all Go utilities using the main Makefile
 utils:
