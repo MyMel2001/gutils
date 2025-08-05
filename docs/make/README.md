@@ -39,6 +39,16 @@ sudo apt update && sudo apt install -y \
 
 In Fedora:
 
+Download gcc-13 source and run:
+
+```
+./contrib/download_prerequisites
+mkdir build && cd build
+../configure --prefix=/usr/local/gcc-13 --enable-languages=c,c++ --disable-multilib
+make -j$(nproc)
+sudo make install
+```
+
 ```
 sudo dnf install fedpkg
 fedpkg clone -a kernel
