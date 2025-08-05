@@ -8,6 +8,7 @@ KERNEL_ARCHIVE = linux-$(KERNEL_VERSION).tar.xz
 KERNEL_DIR = linux-$(KERNEL_VERSION)
 ROOTFS_DIR = rootfs
 INITRAMFS = initramfs.cpio.gz
+BUSYBOX_DIR ?= /usr/bin/busybox
 
 
 # Set this to the password you want for dosu (required)
