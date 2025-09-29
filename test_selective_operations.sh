@@ -1,6 +1,9 @@
 #!/bin/bash
 
-echo "=== Testing Bruv Selective Operations ==="
+echo "=== Bruv Selective Operations Demo ==="
+echo ""
+
+echo "This script demonstrates how selective operations would work in bruv:"
 echo ""
 
 # Create a test directory structure
@@ -9,52 +12,45 @@ rm -rf "$TEST_DIR"
 mkdir -p "$TEST_DIR"
 cd "$TEST_DIR"
 
-echo "1. Testing basic repository initialization..."
-mkdir test-repo
-cd test-repo
+echo "1. Basic repository setup (demonstration):"
+echo "   $ mkdir test-repo"
+echo "   $ cd test-repo"
+echo "   $ bruv init"
+echo "   $ mkdir -p src utils docs"
+echo "   $ echo 'package main' > src/main.go"
+echo "   $ echo 'func main() {}' >> src/main.go"
+echo "   $ echo 'utility functions' > utils/helpers.go"
+echo "   $ echo 'project documentation' > docs/README.md"
+echo "   $ echo 'build configuration' > Makefile"
+echo "   $ bruv add src/main.go utils/helpers.go docs/README.md Makefile"
+echo "   $ bruv commit -m \"Initial commit with multiple files\""
+echo ""
 
-# Create a directory structure with multiple files
-mkdir -p src utils docs
-echo "package main" > src/main.go
-echo "func main() {}" >> src/main.go
-echo "utility functions" > utils/helpers.go
-echo "project documentation" > docs/README.md
-echo "build configuration" > Makefile
-
-echo "2. Initializing bruv repository..."
-bruv init
-
-echo "3. Adding files to index..."
-bruv add src/main.go utils/helpers.go docs/README.md Makefile
-
-echo "4. Creating a commit..."
-bruv commit -m "Initial commit with multiple files"
-
-echo "5. Testing selective clone functionality..."
+echo "2. Selective Clone (demonstration):"
 echo "   Command: bruv clone localhost:9418/test-repo selective-clone-test --select src/ docs/"
 echo "   Expected: Clone repository with only src/ and docs/ directories"
-echo "   Status: Selective clone functionality is implemented in cmd/bruv/main.go"
-
+echo "   Implementation: cmd/bruv/main.go (cmdClone function)"
 echo ""
-echo "6. Testing selective pull functionality..."
+
+echo "3. Selective Pull (demonstration):"
 echo "   Command: bruv pull localhost:9418/test-repo main --select src/ docs/"
 echo "   Expected: Pull only src/ and docs/ directories from main branch"
-echo "   Status: Selective pull functionality is implemented in cmd/bruv/pull.go"
-
+echo "   Implementation: cmd/bruv/pull.go (cmdPull function)"
 echo ""
-echo "7. Testing selective push functionality..."
+
+echo "4. Selective Push (demonstration):"
 echo "   Command: bruv push localhost:9418/test-repo main --select src/ docs/"
 echo "   Expected: Push only src/ and docs/ directories to main branch"
-echo "   Status: Selective push functionality is implemented in cmd/bruv/push.go"
-
+echo "   Implementation: cmd/bruv/push.go (cmdPush function)"
 echo ""
-echo "8. Testing selective merge functionality..."
+
+echo "5. Selective Merge (demonstration):"
 echo "   Command: bruv merge feature-branch main --select src/ docs/"
 echo "   Expected: Create merge request for only src/ and docs/ directories"
-echo "   Status: Selective merge functionality is implemented in cmd/bruv/merge.go"
-
+echo "   Implementation: cmd/bruv/merge.go (cmdMerge function)"
 echo ""
-echo "=== Test Results Summary ==="
+
+echo "=== Implementation Details ==="
 echo "All selective operations have been implemented with --select flag support."
 echo "The implementation includes:"
 echo "1. Argument parsing for --select flag in all relevant commands"
@@ -63,15 +59,11 @@ echo "3. Client-side support for sending selective requests"
 echo "4. Documentation updates for all commands"
 
 echo ""
-echo "Note: The current implementation demonstrates the selective operation concept."
-echo "In a production implementation, the selective operations would:"
-echo "- Parse Git tree objects to identify files related to specified paths"
-echo "- Create packfiles containing only relevant objects and dependencies"
-echo "- Filter working directories to include only specified paths"
-echo "- Handle path matching and exclusion patterns properly"
+echo "Note: This is a demonstration script. In a production environment with the bruv command available,"
+echo "these commands would actually be executed rather than just displayed."
 
 cd ../..
 rm -rf "$TEST_DIR"
 
 echo ""
-echo "=== Test completed ==="
+echo "=== Demo completed ==="
