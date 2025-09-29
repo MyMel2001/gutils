@@ -51,7 +51,7 @@ func cmdListRequests(args []string) error {
 		
 		// Parse the merge request
 		lines := strings.Split(string(requestContent), "\n")
-		var sourceBranch, targetBranch, status, timestamp, requester string
+		var sourceBranch, targetBranch, status, requester, timestamp string
 		
 		for _, line := range lines {
 			if strings.HasPrefix(line, "Source: ") {
@@ -85,6 +85,10 @@ func cmdListRequests(args []string) error {
 		
 		if requester != "" {
 			fmt.Printf("  Requested by: %s\n", requester)
+		}
+		
+		if timestamp != "" {
+			fmt.Printf("  Timestamp: %s\n", timestamp)
 		}
 		
 		fmt.Println()

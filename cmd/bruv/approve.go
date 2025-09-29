@@ -1,15 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"compress/zlib"
-	"crypto/sha1"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 )

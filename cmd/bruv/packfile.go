@@ -178,43 +178,6 @@ func findAlternativeBruvPath() string {
 	return ""
 }
 
-// writeBlobObject writes a blob object to the object database
-func writeBlobObject(content []byte) ([]byte, error) {
-	hasher := sha1.New()
-	header := []byte(fmt.Sprintf("blob %d\x00", len(content)))
-	hasher.Write(header)
-	hasher.Write(content)
-	hash := hasher.Sum(nil)
-
-	bruvPath, err := findBruvDir()
-	if err != nil {
-		return nil, err
-	}
-
-	hashStr := fmt.Sprintf("%x", hash)
-	objectDir := filepath.Join(bruvPath, "objects", hashStr[:2])
-	objectPath := filepath.Join(objectDir, hashStr[2:])
-
-	if _, err := os.Stat(objectPath); !os.IsNotExist(err) {
-		return hash, nil // Object already exists
-	}
-
-	if err := os.MkdirAll(objectDir, 0755); err != nil {
-		return nil, err
-	}
-
-	var b bytes.Buffer
-	w := zlib.NewWriter(&b)
-	w.Write(header)
-	w.Write(content)
-	w.Close()
-
-	if err := os.WriteFile(objectPath, b.Bytes(), 0644); err != nil {
-		return nil, err
-	}
-
-	return hash, nil
-}
 
 func writePackedObject(w io.Writer, hashStr string) error {
 	bruvPath, err := findBruvDir()
@@ -343,7 +306,7 @@ func unpackPackfile(packfilePath, bruvPath string) error {
 
 	for i := 0; i < int(header.NumObjects); i++ {
 		// Read object header (type and size)
-		objType, size, err := readObjectHeader(reader)
+		objType, _, err := readObjectHeader(reader)
 		if err != nil {
 			return fmt.Errorf("error reading object %d header: %w", i, err)
 		}
@@ -444,21 +407,6 @@ func writeObjectToDB(bruvPath string, objectData []byte) error {
 	return nil
 }
 
-// createSelectivePackfile creates a packfile with only objects related to specified paths
-func createSelectivePackfile(commitHash string, selectPaths []string) (*bytes.Buffer, error) {
-	// For now, we'll just print what would be included
-	fmt.Printf("Selective operation would include paths: %v\n", selectPaths)
-	fmt.Println("Note: Selective operation implementation is simplified in this example")
-	
-	// In a real implementation, we would:
-	// 1. Parse the commit to get the tree
-	// 2. Filter the tree to only include objects for the specified paths
-	// 3. Collect only those objects and their dependencies
-	// 4. Create a packfile with only those objects
-	
-	// For now, just create a regular packfile
-	return createPackfile(commitHash)
-}
 
 func updateRefsAfterClone(bruvPath, commitHash string) error {
 	mainRefPath := filepath.Join(bruvPath, "refs", "heads", "main")
