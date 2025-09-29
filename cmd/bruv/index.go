@@ -156,10 +156,22 @@ func cmdAdd(args []string) error {
 		return err
 	}
 
+	// Read .bruvignore configuration
+	ignoreConfig, err := readBruvIgnore()
+	if err != nil {
+		return fmt.Errorf("reading .bruvignore: %w", err)
+	}
+
 	for _, path := range args {
 		if strings.HasPrefix(path, ".bruv/") {
 			continue
 		}
+		
+		// Check if file should be ignored
+		if ignoreConfig.isIgnored(path) {
+			continue
+		}
+		
 		err := addFileToIndex(entries, path)
 		if err != nil {
 			// Distinguish between file not existing and other errors

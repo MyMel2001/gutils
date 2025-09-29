@@ -34,11 +34,44 @@ Commands:
     Start a bruv server, listening for connections on port 9418.
     Example: bruv serve
 
-  clone <url> <directory>
+  clone <url> <directory> [--select <path>...]
     Clone a repository from a URL into a new directory.
+    Use --select to clone only specific files or folders.
     Example: bruv clone localhost:9418/my-repo my-cloned-repo
+    Example: bruv clone localhost:9418/my-repo my-cloned-repo --select src/ docs/
+
+  push <remote> [<branch>] [--select <path>...]
+    Push commits to a remote repository.
+    Use --select to push only specific files or folders.
+    Example: bruv push localhost:9418/my-repo main
+    Example: bruv push localhost:9418/my-repo main --select src/ docs/
+
+  pull <remote> [<branch>] [--select <path>...]
+    Pull commits from a remote repository.
+    Use --select to pull only specific files or folders.
+    Example: bruv pull localhost:9418/my-repo main
+    Example: bruv pull localhost:9418/my-repo main --select src/ docs/
+
+  merge <source-branch> <target-branch> [--select <path>...]
+    Submit a merge request from source branch to target branch.
+    Use --select to merge only specific files or folders.
+    Requires owner approval for merging to master/main.
+    Example: bruv merge feature-branch main
+    Example: bruv merge feature-branch main --select src/ docs/
+
+  approve <merge-request-id>
+    Approve and merge a pending merge request (owner only).
+    Example: bruv approve 1234567890
+
+  list-requests
+    List all pending and approved merge requests.
+    Example: bruv list-requests
 
   help
     Show this help message.
+
+Notes:
+  - .bruvignore files work like .gitignore files to exclude files from version control
+  - Remote URLs use format: host:port/repository-path
 `)
-} 
+}

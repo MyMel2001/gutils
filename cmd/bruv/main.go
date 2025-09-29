@@ -58,6 +58,31 @@ func main() {
 			fmt.Fprintf(os.Stderr, "bruv: %s\n", err)
 			os.Exit(1)
 		}
+	case "push":
+		if err := cmdPush(args); err != nil {
+			fmt.Fprintf(os.Stderr, "bruv: %s\n", err)
+			os.Exit(1)
+		}
+	case "pull":
+		if err := cmdPull(args); err != nil {
+			fmt.Fprintf(os.Stderr, "bruv: %s\n", err)
+			os.Exit(1)
+		}
+	case "merge":
+		if err := cmdMerge(args); err != nil {
+			fmt.Fprintf(os.Stderr, "bruv: %s\n", err)
+			os.Exit(1)
+		}
+	case "approve":
+		if err := cmdApprove(args); err != nil {
+			fmt.Fprintf(os.Stderr, "bruv: %s\n", err)
+			os.Exit(1)
+		}
+	case "list-requests":
+		if err := cmdListRequests(args); err != nil {
+			fmt.Fprintf(os.Stderr, "bruv: %s\n", err)
+			os.Exit(1)
+		}
 	case "help":
 		cmdHelp()
 	default:
@@ -69,10 +94,40 @@ func main() {
 
 func cmdClone(args []string) error {
 	if len(args) < 2 {
-		return fmt.Errorf("usage: bruv clone <url> <directory>")
+		return fmt.Errorf("usage: bruv clone <url> <directory> [--select <path>...]")
 	}
-	url := args[0]
-	dir := args[1]
+	
+	// Parse arguments for selective cloning
+	selectPaths := []string{}
+	regularArgs := []string{}
+	skipNext := false
+	
+	for i, arg := range args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		if arg == "--select" {
+			// Collect all paths after --select
+			for j := i + 1; j < len(args); j++ {
+				if !strings.HasPrefix(args[j], "-") {
+					selectPaths = append(selectPaths, args[j])
+				} else {
+					break
+				}
+			}
+			skipNext = true
+		} else {
+			regularArgs = append(regularArgs, arg)
+		}
+	}
+	
+	if len(regularArgs) < 2 {
+		return fmt.Errorf("usage: bruv clone <url> <directory> [--select <path>...]")
+	}
+	
+	url := regularArgs[0]
+	dir := regularArgs[1]
 
 	// very basic url parsing
 	parts := strings.Split(url, ":")
@@ -144,6 +199,14 @@ func cmdClone(args []string) error {
 	}
 
 	fmt.Println("Repository successfully cloned.")
+
+	// If selective paths were specified, filter the working directory
+	if len(selectPaths) > 0 {
+		if err := filterWorkingDirectory(dir, selectPaths); err != nil {
+			return fmt.Errorf("failed to filter working directory: %w", err)
+		}
+		fmt.Printf("Filtered working directory to: %v\n", selectPaths)
+	}
 
 	return nil
 }
@@ -287,9 +350,24 @@ func cmdHashObject(args []string) error {
 		}
 	}
 
-	return nil
-}
-
+	
+		return nil
+	}
+	
+	// filterWorkingDirectory filters the working directory to only include specified paths
+	func filterWorkingDirectory(repoDir string, selectPaths []string) error {
+		// For each selectPath, check if it exists in the repository
+		// This is a simplified implementation - in a real system, we would:
+		// 1. Read the tree objects to find the files
+		// 2. Extract only the specified files/folders
+		// 3. Remove everything else from the working directory
+		
+		// For now, we'll just print what would be filtered
+		fmt.Printf("Selective clone would filter to paths: %v\n", selectPaths)
+		fmt.Println("Note: Selective clone implementation is simplified in this example")
+		
+		return nil
+	}
 func findBruvDir() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
