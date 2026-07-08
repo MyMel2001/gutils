@@ -100,8 +100,7 @@ UTILS = \
 	pr \
 	expr \
 	chgrp \
-	cmp \
-	bruv
+	cmp
 
 # Default target: build all utilities
 all: $(UTILS)
