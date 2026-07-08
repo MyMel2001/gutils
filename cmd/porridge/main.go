@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -83,6 +82,10 @@ func unzipFolderFromZip(zipData []byte, folder, dest string) error {
 		if relPath == "" {
 			continue
 		}
+		// Prevent path traversal
+		if strings.Contains(relPath, "..") {
+			continue
+		}
 		outPath := filepath.Join(dest, relPath)
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(outPath, 0755)
@@ -109,7 +112,7 @@ func unzipFolderFromZip(zipData []byte, folder, dest string) error {
 func getZipPackages() map[string]string {
 	pkgs := make(map[string]string)
 	os.MkdirAll(cacheDir, 0755)
-	data, err := ioutil.ReadFile(sourcesFile)
+	data, err := os.ReadFile(sourcesFile)
 	if err != nil {
 		return pkgs
 	}
@@ -122,13 +125,13 @@ func getZipPackages() map[string]string {
 		cacheZip := filepath.Join(cacheDir, filepath.Base(src))
 		var zipData []byte
 		if _, err := os.Stat(cacheZip); err == nil {
-			zipData, _ = ioutil.ReadFile(cacheZip)
+			zipData, _ = os.ReadFile(cacheZip)
 		} else {
 			zipData, err = downloadFile(src)
 			if err != nil {
 				continue
 			}
-			ioutil.WriteFile(cacheZip, zipData, 0644)
+			os.WriteFile(cacheZip, zipData, 0644)
 		}
 		r, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 		if err != nil {
@@ -189,7 +192,7 @@ func main() {
 			zipPkgs := getZipPackages()
 			if url, ok := zipPkgs[pkg]; ok {
 				cacheZip := filepath.Join(cacheDir, filepath.Base(url))
-				zipData, err := ioutil.ReadFile(cacheZip)
+				zipData, err := os.ReadFile(cacheZip)
 				if err != nil {
 					fmt.Printf("porridge: failed to read cached zip for '%s': %v\n", pkg, err)
 					return
@@ -255,7 +258,7 @@ func main() {
 			fmt.Printf("porridge: package '%s' not installed\n", pkg)
 			return
 		}
-		os.Remove(instPkg)
+		os.RemoveAll(instPkg)
 		fmt.Printf("porridge: removed '%s'\n", pkg)
 		// Remove from installed sources
 		data, _ := os.ReadFile(installedSourcesFile)
@@ -293,13 +296,14 @@ func main() {
 			fmt.Println("porridge: no packages found")
 		}
 	case "sync":
-		pkgs := []string{""}
-		for _, pkg := range pkgs {
-			f := filepath.Join(repoDir, pkg)
-			os.WriteFile(f, []byte("package: "+pkg), 0644)
+		// Sync packages from sources
+		zipPkgs := getZipPackages()
+		for name, url := range zipPkgs {
+			f := filepath.Join(repoDir, name)
+			os.WriteFile(f, []byte("source: "+url+"\npackage: "+name+"\n"), 0644)
+			fmt.Printf("porridge: synced '%s' from %s\n", name, url)
 		}
 		fmt.Println("porridge: repo synced")
-		// Optionally sync meta repos (no-op, as we fetch live)
 	case "update":
 		files, _ := os.ReadDir(instDir)
 		for _, f := range files {

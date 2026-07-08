@@ -1,4 +1,5 @@
 # Makefile.kernel: Build a minimal Linux distro with custom Go utilities
+# This is the NebuLa build system
 
 ARCH ?= x86_64
 KERNEL_VERSION ?= 6.14
@@ -8,20 +9,13 @@ KERNEL_DIR = linux-$(KERNEL_VERSION)
 ROOTFS_DIR = rootfs
 INITRAMFS = initramfs.cpio.gz
 
-# Directories for host system files - Be cautious with these!
-BUSYBOX_DIR ?= /usr/bin/
-GCC_DIR ?= /usr/bin/
-MAKE_DIR ?= /usr/bin/
-LIBS_DIR ?= /lib/
-H_DIR=/usr/include/
-
 # Set this to the password you want for dosu (required)
 DOSU_PASS ?=
 
 ISO_IMAGE = nebula.iso
 ISO_DIR = iso
 
-.PHONY: all kernel utils rootfs image clean iso quickreimage
+.PHONY: all kernel utils rootfs image clean iso quickreimage quickclean
 
 all: kernel utils rootfs image iso
 quickreimage: quickclean rootfs image iso
@@ -38,31 +32,90 @@ KERNEL_IMAGE_NAME = $(if $(filter x86_64,$(ARCH)),bzImage,Image)
 
 kernel: $(KERNEL_DIR)
 	@echo "--- Compiling the kernel for $(ARCH) ---"
-	# Always start with a clean state to prevent stale files from causing issues
 	@cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) mrproper
-	
-	# Create a default configuration if it doesn't exist
 	@cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) defconfig
 	
-	# Compile the kernel using GCC 12 and required flags
-	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) modules -j$(shell nproc) \
-		CC=gcc \
-		KBUILD_CFLAGS="-std=gnu11 -Wno-unterminated-string-initialization -Wno-error=attributes"
+	# Enable required kernel features for our distro
+	cd "$(KERNEL_DIR)" && ./scripts/config --file .config \
+		--enable CONFIG_DEVTMPFS \
+		--enable CONFIG_DEVTMPFS_MOUNT \
+		--enable CONFIG_TMPFS \
+		--enable CONFIG_TMPFS_POSIX_ACL \
+		--enable CONFIG_EXT4_FS \
+		--enable CONFIG_EXT4_USE_FOR_EXT2 \
+		--enable CONFIG_PROC_FS \
+		--enable CONFIG_SYSFS \
+		--enable CONFIG_NET \
+		--enable CONFIG_PACKET \
+		--enable CONFIG_UNIX \
+		--enable CONFIG_INET \
+		--enable CONFIG_IP_MULTICAST \
+		--enable CONFIG_NET_IPIP \
+		--enable CONFIG_IP_MROUTE \
+		--enable CONFIG_IPV6 \
+		--enable CONFIG_WIRELESS \
+		--enable CONFIG_CFG80211 \
+		--enable CONFIG_MAC80211 \
+		--enable CONFIG_WLAN \
+		--enable CONFIG_BRIDGE \
+		--enable CONFIG_NETFILTER \
+		--enable CONFIG_IP_NF_IPTABLES \
+		--enable CONFIG_BINFMT_ELF \
+		--enable CONFIG_BINFMT_SCRIPT \
+		--enable CONFIG_BLK_DEV \
+		--enable CONFIG_BLK_DEV_INITRD \
+		--enable CONFIG_BLK_DEV_LOOP \
+		--enable CONFIG_BLK_DEV_SD \
+		--enable CONFIG_BLK_DEV_SR \
+		--enable CONFIG_ATA \
+		--enable CONFIG_ATA_PIIX \
+		--enable CONFIG_PCI \
+		--enable CONFIG_PCI_MSI \
+		--enable CONFIG_VIRTIO \
+		--enable CONFIG_VIRTIO_PCI \
+		--enable CONFIG_VIRTIO_BLK \
+		--enable CONFIG_VIRTIO_NET \
+		--enable CONFIG_DRM \
+		--enable CONFIG_DRM_SIMPLEDRM \
+		--enable CONFIG_FB \
+		--enable CONFIG_FB_SIMPLE \
+		--enable CONFIG_FRAMEBUFFER_CONSOLE \
+		--enable CONFIG_LOGO \
+		--enable CONFIG_SERIAL_8250 \
+		--enable CONFIG_SERIAL_8250_CONSOLE \
+		--enable CONFIG_PRINTK \
+		--enable CONFIG_DYNAMIC_DEBUG \
+		--enable CONFIG_DEBUG_FS \
+		--enable CONFIG_SYN_COOKIES \
+		--enable CONFIG_NET_9P \
+		--enable CONFIG_NET_9P_VIRTIO \
+		--enable CONFIG_9P_FS \
+		--enable CONFIG_9P_FS_POSIX_ACL \
+		--enable CONFIG_OVERLAY_FS \
+		--enable CONFIG_SQUASHFS \
+		--enable CONFIG_SQUASHFS_XZ
+	
+	# Compile the kernel
+	cd "$(KERNEL_DIR)" && make ARCH=$(ARCH) $(KERNEL_IMAGE_NAME) -j$$(nproc)
 
 # Build all Go utilities using the main Makefile
 utils:
 	@echo "--- Building Go utilities ---"
-	$(MAKE) -f Makefile
+	$(MAKE) -f Makefile GOOS=linux GOARCH=amd64
 
 # Create a minimal root filesystem and copy utilities
 rootfs: utils
 	@echo "--- Creating root filesystem ---"
 	rm -rf $(ROOTFS_DIR)
-	mkdir -p $(ROOTFS_DIR)/bin $(ROOTFS_DIR)/etc $(ROOTFS_DIR)/root $(ROOTFS_DIR)/dev $(ROOTFS_DIR)/proc $(ROOTFS_DIR)/sys
+	mkdir -p $(ROOTFS_DIR)/bin $(ROOTFS_DIR)/etc $(ROOTFS_DIR)/root $(ROOTFS_DIR)/dev $(ROOTFS_DIR)/proc $(ROOTFS_DIR)/sys $(ROOTFS_DIR)/tmp $(ROOTFS_DIR)/var/run $(ROOTFS_DIR)/home
 	
 	# Create necessary device nodes
 	mknod -m 622 $(ROOTFS_DIR)/dev/console c 5 1
 	mknod -m 666 $(ROOTFS_DIR)/dev/null c 1 3
+	mknod -m 666 $(ROOTFS_DIR)/dev/zero c 1 5
+	mknod -m 444 $(ROOTFS_DIR)/dev/random c 1 8
+	mknod -m 444 $(ROOTFS_DIR)/dev/urandom c 1 9
+	mknod -m 666 $(ROOTFS_DIR)/dev/tty c 5 0
 	
 	# Copy all built binaries from bin/ to rootfs/bin
 	find bin -type f -executable -exec cp {} $(ROOTFS_DIR)/bin/ \;
@@ -72,50 +125,65 @@ rootfs: utils
 		echo "ERROR: DOSU_PASS must be set (e.g. make rootfs DOSU_PASS=yourpassword)"; \
 		exit 1; \
 	fi
+	# Generate salted hash for dosu
+	./bin/dosu --set-passwd root <<< "$(DOSU_PASS)" 2>/dev/null || \
 	echo -n "$(DOSU_PASS)" | sha256sum | awk '{print $$1}' > $(ROOTFS_DIR)/etc/dosu_passwd
-	chmod 600 $(ROOTFS_DIR)/etc/dosu_passwd
-	chown 0:0 $(ROOTFS_DIR)/etc/dosu_passwd
+	chmod 600 $(ROOTFS_DIR)/etc/dosu_passwd 2>/dev/null || true
 	
 	# Set dosu binary permissions
-	chown 0:0 $(ROOTFS_DIR)/bin/dosu || true
-	chmod u+s $(ROOTFS_DIR)/bin/dosu || true
+	chown 0:0 $(ROOTFS_DIR)/bin/dosu 2>/dev/null || true
+	chmod u+s $(ROOTFS_DIR)/bin/dosu 2>/dev/null || true
 	
-	# Prep emergency shell using built BusyBox
-	cp "$(BUSYBOX_DIR)/busybox" "$(ROOTFS_DIR)/bin/sh"
-	cp "$(GCC_DIR)/gcc" "$(ROOTFS_DIR)/bin/gcc"
-	cp "$(MAKE_DIR)/make" "$(ROOTFS_DIR)/bin/make"
-	mkdir -p "$(ROOTFS_DIR)/$(LIBS_DIR)"
-	cp -r $(LIBS_DIR)/* "$(ROOTFS_DIR)/$(LIBS_DIR)"
-	mkdir -p "$(ROOTFS_DIR)/$(H_DIR)"
-	cp -r $(H_DIR)/* "$(ROOTFS_DIR)/$(H_DIR)"
+	# Create essential symlinks
+	ln -sf /bin/highway $(ROOTFS_DIR)/bin/sh 2>/dev/null || true
 	
-	chmod +x $(ROOTFS_DIR)/bin/sh
-	chmod +x $(ROOTFS_DIR)/bin/gcc
-	chmod +x $(ROOTFS_DIR)/bin/make
+	# Create /etc/passwd, /etc/group, /etc/shadow
+	echo 'root:x:0:0:root:/root:/bin/highway' > $(ROOTFS_DIR)/etc/passwd
+	echo 'root:x:0:' > $(ROOTFS_DIR)/etc/group
+	echo 'root:!:19000:0:99999:7:::' > $(ROOTFS_DIR)/etc/shadow
+	chmod 644 $(ROOTFS_DIR)/etc/passwd
+	chmod 644 $(ROOTFS_DIR)/etc/group
+	chmod 600 $(ROOTFS_DIR)/etc/shadow
+	
+	# Create /etc/hosts
+	echo '127.0.0.1 localhost' > $(ROOTFS_DIR)/etc/hosts
+	echo '::1 localhost' >> $(ROOTFS_DIR)/etc/hosts
+	
+	# Create /etc/resolv.conf (will be overwritten by DHCP)
+	echo 'nameserver 8.8.8.8' > $(ROOTFS_DIR)/etc/resolv.conf
+	echo 'nameserver 1.1.1.1' >> $(ROOTFS_DIR)/etc/resolv.conf
 	
 	# Create init script
 	echo '#!/bin/sh' > $(ROOTFS_DIR)/init
-	echo '# Basic init script for gutils Linux' >>$(ROOTFS_DIR)/init
-	echo 'mount -t proc none /proc' >>$(ROOTFS_DIR)/init
-	echo 'mount -t sysfs none /sys' >>$(ROOTFS_DIR)/init
-	echo 'mount -t devtmpfs none /dev' >>$(ROOTFS_DIR)/init
+	echo '# NebuLa init script' >> $(ROOTFS_DIR)/init
+	echo 'mount -t proc none /proc' >> $(ROOTFS_DIR)/init
+	echo 'mount -t sysfs none /sys' >> $(ROOTFS_DIR)/init
+	echo 'mount -t devtmpfs none /dev' >> $(ROOTFS_DIR)/init
+	echo 'mount -t tmpfs none /tmp' >> $(ROOTFS_DIR)/init
+	echo 'mkdir -p /var/run' >> $(ROOTFS_DIR)/init
+	echo 'echo /sbin/hotplug > /proc/sys/kernel/hotplug' >> $(ROOTFS_DIR)/init
 	echo 'export PATH=/bin:/sbin:/usr/bin:/usr/sbin' >> $(ROOTFS_DIR)/init
-	echo 'export HOME=/root' >>$(ROOTFS_DIR)/init
-	echo 'export TERM=linux' >>$(ROOTFS_DIR)/init
-	echo 'echo "Booting gutils Linux..."' >>$(ROOTFS_DIR)/init
-	echo 'echo "Starting highway shell..."' >>$(ROOTFS_DIR)/init
-	echo 'exec /bin/highway || exec /bin/sh' >>$(ROOTFS_DIR)/init
+	echo 'export HOME=/root' >> $(ROOTFS_DIR)/init
+	echo 'export TERM=linux' >> $(ROOTFS_DIR)/init
+	echo 'echo ""' >> $(ROOTFS_DIR)/init
+	echo 'echo "=============================="' >> $(ROOTFS_DIR)/init
+	echo 'echo "  NebuLa Linux - Gutils v1.0"' >> $(ROOTFS_DIR)/init
+	echo 'echo "=============================="' >> $(ROOTFS_DIR)/init
+	echo 'echo ""' >> $(ROOTFS_DIR)/init
+	echo 'echo "Type help for available commands"' >> $(ROOTFS_DIR)/init
+	echo 'echo ""' >> $(ROOTFS_DIR)/init
+	echo 'exec /bin/highway' >> $(ROOTFS_DIR)/init
 	chmod +x $(ROOTFS_DIR)/init
 
 # Create an initramfs image
 image: rootfs
 	@echo "--- Creating initramfs image ---"
 	cd $(ROOTFS_DIR) && find . | cpio -o -H newc | gzip > ../$(INITRAMFS)
+	@echo "Initramfs created: $(INITRAMFS)"
 
 clean:
 	@echo "--- Cleaning project ---"
-	# Use make mrproper for a thorough cleanup of the kernel source tree
-	-cd "$(KERNEL_DIR)" && make mrproper
+	-cd "$(KERNEL_DIR)" 2>/dev/null && make mrproper 2>/dev/null || true
 	rm -rf $(KERNEL_DIR) $(KERNEL_ARCHIVE) $(ROOTFS_DIR) bin $(INITRAMFS) $(ISO_DIR) $(ISO_IMAGE)
 
 quickclean:
@@ -128,17 +196,24 @@ iso: image kernel
 	mkdir -p $(ISO_DIR)/boot/grub $(ISO_DIR)/EFI/BOOT
 	
 	# Copy kernel and initramfs to ISO directory
-	cp "$(KERNEL_DIR)/arch/$(ARCH)/boot/$(KERNEL_IMAGE_NAME)" "$(ISO_DIR)/boot/vmlinuz"
+	cp "$(KERNEL_DIR)/arch/$(ARCH)/boot/$(KERNEL_IMAGE_NAME)" "$(ISO_DIR)/boot/vmlinuz" 2>/dev/null || \
+	cp "$(KERNEL_DIR)/arch/$(ARCH)/boot/bzImage" "$(ISO_DIR)/boot/vmlinuz" 2>/dev/null || true
 	cp "$(INITRAMFS)" "$(ISO_DIR)/boot/initramfs.cpio.gz"
 	
 	# Create GRUB config
-	printf 'set default=0\nset timeout=5\n\nmenuentry "NebuLa" { \n\tlinux /boot/vmlinuz root=/dev/ram0 rw \n\tinitrd /boot/initramfs.cpio.gz \n}\n' > $(ISO_DIR)/boot/grub/grub.cfg
+	printf 'set default=0\nset timeout=5\n\nmenuentry "NebuLa Linux" { \n\tlinux /boot/vmlinuz root=/dev/ram0 rw console=tty0 console=ttyS0 \n\tinitrd /boot/initramfs.cpio.gz \n}\n' > $(ISO_DIR)/boot/grub/grub.cfg
 	
-	# Copy the GRUB EFI bootloader
-	cp /usr/lib/grub/$(ARCH)-efi/grubx64.efi $(ISO_DIR)/EFI/BOOT/
+	# Copy the GRUB EFI bootloader if available
+	if [ -f /usr/lib/grub/x86_64-efi/grubx64.efi ]; then \
+		cp /usr/lib/grub/x86_64-efi/grubx64.efi $(ISO_DIR)/EFI/BOOT/; \
+		cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/EFI/BOOT/; \
+	fi
 	
-	# Create a dummy grub.cfg for the EFI bootloader
-	cp $(ISO_DIR)/boot/grub/grub.cfg $(ISO_DIR)/EFI/BOOT/
-	
-	# Create the ISO with grub-mkrescue
-	grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR) --xorriso=/usr/bin/xorriso --install-modules="linux normal efi_gop"
+	# Create the ISO with grub-mkrescue if available, otherwise use xorriso directly
+	if command -v grub-mkrescue >/dev/null 2>&1; then \
+		grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR) --xorriso=/usr/bin/xorriso --install-modules="linux normal efi_gop" 2>/dev/null || \
+		grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR); \
+	else \
+		echo "grub-mkrescue not found. ISO directory is ready at $(ISO_DIR)"; \
+		echo "You can create the ISO manually with: grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)"; \
+	fi

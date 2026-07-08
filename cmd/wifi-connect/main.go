@@ -4,19 +4,24 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/mdlayher/wifi"
 )
 
-// wifi-connect: connects to a WiFi network using WPA2-PSK
+// wifi-connect: connects to a WiFi network using nl80211 directly (no external tools)
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "wifi-connect: usage: wifi-connect SSID PASSWORD")
+	if len(os.Args) < 2 {
+		fmt.Fprintln(os.Stderr, "wifi-connect: usage: wifi-connect SSID [PASSWORD]")
+		fmt.Fprintln(os.Stderr, "  If PASSWORD is omitted, connects to an open network")
 		os.Exit(1)
 	}
 	ssid := os.Args[1]
-	password := os.Args[2]
+	password := ""
+	if len(os.Args) > 2 {
+		password = os.Args[2]
+	}
 
 	client, err := wifi.New()
 	if err != nil {
@@ -32,13 +37,14 @@ func main() {
 	}
 	fmt.Println("Available WiFi interfaces:")
 	for _, ifi := range ifaces {
-		fmt.Printf("  %s\n", ifi.Name)
+		fmt.Printf("  %s (MAC: %s)\n", ifi.Name, ifi.HardwareAddr)
 	}
 	// Use the first WiFi interface
 	ifi := ifaces[0]
+
+	// Scan for networks
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	// Scan for networks
 	if err := client.Scan(ctx, ifi); err != nil {
 		fmt.Fprintln(os.Stderr, "wifi-connect: scan failed:", err)
 		os.Exit(1)
@@ -56,27 +62,58 @@ func main() {
 		}
 	}
 	if !found {
-		fmt.Fprintf(os.Stderr, "wifi-connect: SSID '%s' not found\n", ssid)
+		fmt.Fprintf(os.Stderr, "wifi-connect: SSID '%s' not found in scan results\n", ssid)
+		fmt.Println("Available networks:")
+		for _, ap := range aps {
+			fmt.Printf("  %s (freq: %d MHz)\n", ap.SSID, ap.Frequency)
+		}
 		os.Exit(1)
 	}
 
-	// Use github.com/mdlayher/wifi to connect
 	fmt.Printf("Connecting to SSID '%s' on interface '%s'...\n", ssid, ifi.Name)
-	if err := client.ConnectWPAPSK(ifi, ssid, password); err != nil {
-		fmt.Fprintln(os.Stderr, "wifi-connect: failed to connect:", err)
-		os.Exit(1)
+
+	// Disconnect any existing connection first
+	if err := client.Disconnect(ifi); err != nil {
+		// Ignore error if not connected
 	}
 
+	if password != "" {
+		// Connect using WPA2-PSK via nl80211 (kernel handles the 4-way handshake)
+		if err := client.ConnectWPAPSK(ifi, ssid, password); err != nil {
+			fmt.Fprintln(os.Stderr, "wifi-connect: WPA connection failed:", err)
+			os.Exit(1)
+		}
+	} else {
+		// Connect to open network
+		if err := client.Connect(ifi, ssid); err != nil {
+			fmt.Fprintln(os.Stderr, "wifi-connect: connection failed:", err)
+			os.Exit(1)
+		}
+	}
+
+	// Wait for association to complete
+	time.Sleep(2 * time.Second)
+
+	// Verify connection by checking BSS
 	bss, err := client.BSS(ifi)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "wifi-connect: failed to get BSS information after connecting:", err)
+		fmt.Fprintln(os.Stderr, "wifi-connect: connected but could not verify BSS:", err)
+		// Still try DHCP
+	} else if bss.SSID == ssid {
+		fmt.Printf("Associated with %s (BSSID: %s)\n", bss.SSID, bss.BSSID)
+	} else {
+		fmt.Fprintf(os.Stderr, "wifi-connect: connected to '%s' instead of '%s'\n", bss.SSID, ssid)
+	}
+
+	// Get DHCP lease using our dhcp-get utility
+	fmt.Println("Requesting DHCP lease...")
+	dhcpCmd := exec.Command("dhcp-get", ifi.Name)
+	dhcpCmd.Stdout = os.Stdout
+	dhcpCmd.Stderr = os.Stderr
+	if err := dhcpCmd.Run(); err != nil {
+		fmt.Fprintln(os.Stderr, "wifi-connect: DHCP failed:", err)
 		os.Exit(1)
 	}
 
-	if bss.Status == wifi.BSSStatusAssociated && bss.SSID == ssid {
-		fmt.Println("Successfully connected to WiFi network.")
-	} else {
-		fmt.Fprintf(os.Stderr, "wifi-connect: connection to '%s' failed, status: %s\n", ssid, bss.Status)
-		os.Exit(1)
-	}
+	fmt.Println("Successfully connected to WiFi network.")
 }

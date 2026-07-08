@@ -5,11 +5,29 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
-// highway: a minimal interactive shell
+// highway: a minimal interactive shell with job control, pipes, and builtins
 func main() {
+	// Set up signal handling for SIGCHLD
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGCHLD)
+	go func() {
+		for range sigCh {
+			// Reap child processes
+			for {
+				var wstatus syscall.WaitStatus
+				pid, err := syscall.Wait4(-1, &wstatus, syscall.WNOHANG, nil)
+				if pid <= 0 || err != nil {
+					break
+				}
+			}
+		}
+	}()
+
 	if len(os.Args) > 1 {
 		scriptFile := os.Args[1]
 		f, err := os.Open(scriptFile)
@@ -23,9 +41,14 @@ func main() {
 	}
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("highway$ ")
+		dir, _ := os.Getwd()
+		fmt.Printf("highway:%s$ ", dir)
 		line, err := reader.ReadString('\n')
 		if err != nil {
+			if err.Error() == "EOF" {
+				fmt.Println()
+				os.Exit(0)
+			}
 			fmt.Fprintln(os.Stderr, "Error reading input:", err)
 			continue
 		}
@@ -42,6 +65,10 @@ func execScript(f *os.File) {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
+		// Skip comments and empty lines
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
 		if handleBuiltins(line) {
 			continue
 		}
@@ -58,7 +85,6 @@ func handleBuiltins(line string) bool {
 		os.Exit(0)
 	}
 	if line == "clear" {
-		// Clear the terminal screen (ANSI escape code)
 		fmt.Print("\033[2J\033[H")
 		return true
 	}
@@ -92,6 +118,34 @@ func handleBuiltins(line string) bool {
 		handleAlias(line)
 		return true
 	}
+	// Handle export
+	if strings.HasPrefix(line, "export ") {
+		parts := strings.SplitN(line[7:], "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			val := strings.TrimSpace(parts[1])
+			val = strings.Trim(val, "'\"")
+			os.Setenv(key, val)
+		}
+		return true
+	}
+	// Handle unset
+	if strings.HasPrefix(line, "unset ") {
+		key := strings.TrimSpace(line[6:])
+		os.Unsetenv(key)
+		return true
+	}
+	// Handle which
+	if strings.HasPrefix(line, "which ") {
+		cmd := strings.TrimSpace(line[6:])
+		path, err := exec.LookPath(cmd)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s not found\n", cmd)
+		} else {
+			fmt.Println(path)
+		}
+		return true
+	}
 	return false
 }
 
@@ -99,7 +153,6 @@ func handleBuiltins(line string) bool {
 func handleAlias(line string) {
 	args := strings.Fields(line)
 	if len(args) == 1 {
-		// Print all aliases
 		for k, v := range aliasMap {
 			fmt.Printf("alias %s='%s'\n", k, v)
 		}
@@ -112,7 +165,6 @@ func handleAlias(line string) {
 			val := strings.Trim(parts[1], "'\"")
 			aliasMap[name] = val
 		} else {
-			// Print single alias
 			if val, ok := aliasMap[arg]; ok {
 				fmt.Printf("alias %s='%s'\n", arg, val)
 			} else {
@@ -129,13 +181,12 @@ func expandAlias(line string) string {
 		return line
 	}
 	if val, ok := aliasMap[fields[0]]; ok {
-		// Replace first word with alias value, append rest
 		return val + " " + strings.Join(fields[1:], " ")
 	}
 	return line
 }
 
-// execLine executes a line as a command (supports |, &&, ;)
+// execLine executes a line as a command (supports |, &&, ;, ||)
 func execLine(line string) {
 	if line == "" {
 		return
@@ -149,23 +200,23 @@ func execLine(line string) {
 		if seqCmd == "" {
 			continue
 		}
-		// Handle &&
-		andCmds := splitByUnescaped(seqCmd, '&')
-		if len(andCmds) > 1 {
-			// Only treat as && if double ampersand
-			var cmds []string
-			for i := 0; i < len(andCmds); i++ {
-				if i+1 < len(andCmds) && andCmds[i+1] == "" {
-					cmds = append(cmds, strings.TrimSpace(andCmds[i]))
-					i++ // skip next
-				} else {
-					cmds = append(cmds, strings.TrimSpace(andCmds[i]))
-				}
+		// Handle || (OR) - must check before single | and &
+		if strings.Contains(seqCmd, "||") {
+			orCmds := splitByDoublePipe(seqCmd)
+			if len(orCmds) > 1 {
+				execOrChain(orCmds)
+				continue
 			}
-			execAndChain(cmds)
-			continue
 		}
-		// Handle |
+		// Handle && (AND)
+		if strings.Contains(seqCmd, "&&") {
+			andCmds := splitByDoubleAmpersand(seqCmd)
+			if len(andCmds) > 1 {
+				execAndChain(andCmds)
+				continue
+			}
+		}
+		// Handle | (pipe)
 		pipeCmds := splitByUnescaped(seqCmd, '|')
 		if len(pipeCmds) > 1 {
 			execPipeline(pipeCmds)
@@ -173,6 +224,134 @@ func execLine(line string) {
 		}
 		// Single command
 		execSingle(seqCmd)
+	}
+}
+
+// splitByDoublePipe splits a string by || (double pipe) operator
+func splitByDoublePipe(s string) []string {
+	var res []string
+	var current strings.Builder
+	inQuote := false
+	quoteChar := byte(0)
+	escape := false
+	i := 0
+	for i < len(s) {
+		c := s[i]
+		if escape {
+			current.WriteByte(c)
+			escape = false
+			i++
+			continue
+		}
+		if c == '\\' {
+			escape = true
+			i++
+			continue
+		}
+		if inQuote {
+			if c == quoteChar {
+				inQuote = false
+			} else {
+				current.WriteByte(c)
+			}
+			i++
+			continue
+		}
+		if c == '\'' || c == '"' {
+			inQuote = true
+			quoteChar = c
+			i++
+			continue
+		}
+		if c == '|' && i+1 < len(s) && s[i+1] == '|' {
+			res = append(res, current.String())
+			current.Reset()
+			i += 2
+			continue
+		}
+		current.WriteByte(c)
+		i++
+	}
+	if current.Len() > 0 {
+		res = append(res, current.String())
+	}
+	return res
+}
+
+// splitByDoubleAmpersand splits a string by && (double ampersand) operator
+func splitByDoubleAmpersand(s string) []string {
+	var res []string
+	var current strings.Builder
+	inQuote := false
+	quoteChar := byte(0)
+	escape := false
+	i := 0
+	for i < len(s) {
+		c := s[i]
+		if escape {
+			current.WriteByte(c)
+			escape = false
+			i++
+			continue
+		}
+		if c == '\\' {
+			escape = true
+			i++
+			continue
+		}
+		if inQuote {
+			if c == quoteChar {
+				inQuote = false
+			} else {
+				current.WriteByte(c)
+			}
+			i++
+			continue
+		}
+		if c == '\'' || c == '"' {
+			inQuote = true
+			quoteChar = c
+			i++
+			continue
+		}
+		if c == '&' && i+1 < len(s) && s[i+1] == '&' {
+			res = append(res, current.String())
+			current.Reset()
+			i += 2
+			continue
+		}
+		current.WriteByte(c)
+		i++
+	}
+	if current.Len() > 0 {
+		res = append(res, current.String())
+	}
+	return res
+}
+
+// execOrChain executes commands chained with ||
+func execOrChain(cmds []string) {
+	for _, cmd := range cmds {
+		cmd = strings.TrimSpace(cmd)
+		if cmd == "" {
+			continue
+		}
+		args := splitArgs(cmd)
+		if len(args) == 0 {
+			continue
+		}
+		cmdPath, err := exec.LookPath(args[0])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "highway: command not found:", args[0])
+			continue
+		}
+		c := exec.Command(cmdPath, args[1:]...)
+		c.Stdin = os.Stdin
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		if err := c.Run(); err == nil {
+			return // Success, stop executing
+		}
 	}
 }
 
@@ -266,14 +445,12 @@ func execPipeline(cmds []string) {
 		}
 		cmd := exec.Command(cmdPath, args[1:]...)
 
-		// For the first command, use os.Stdin. For others, use the previous output.
 		if i == 0 {
 			cmd.Stdin = os.Stdin
 		} else {
 			cmd.Stdin = strings.NewReader(string(input))
 		}
 
-		// For the last command, output to os.Stdout. Otherwise, capture output.
 		if i == len(cmds)-1 {
 			cmd.Stdout = os.Stdout
 		} else {

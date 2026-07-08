@@ -1,6 +1,7 @@
 # Makefile for Gutils
+# NebuLa build system
 
-GOARCH ?= arm64
+GOARCH ?= amd64
 GOOS ?= linux
 
 # List of utilities
